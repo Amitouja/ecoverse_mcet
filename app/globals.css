@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    cursor: none;
+    overflow-x: hidden;
+}
+
+/* Typography Improvements */
+h1, h2, h3, h4, h5, h6 {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+p, a, span, button, input, textarea {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus States for Accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+    outline: 2px solid #4a7c59;
+    outline-offset: 2px;
+}
+
+/* Text Selection */
+::selection {
+    background-color: #4a7c59;
+    color: #f7f4ef;
+}
+
+/* Essential animations */
+@keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+@keyframes burstA {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--bx), var(--by)) scale(0.3); }
+}
+
+@keyframes hc1 {
+    0%, 100% { transform: translateY(0) rotateZ(-4deg); }
+    50% { transform: translateY(-12px) rotateZ(-4deg); }
+}
+
+@keyframes hc2 {
+    0%, 100% { transform: translateY(0) rotateZ(3deg); }
+    50% { transform: translateY(-20px) rotateZ(3deg); }
+}
+
+.burst {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9900;
+    font-size: 1rem;
+    animation: burstA 0.85s ease forwards;
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, input[type="checkbox"], input[type="radio"] {
+    transition: all 0.25s ease-in-out;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f7f4ef;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4a7c59;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2d5a3d;
+}
