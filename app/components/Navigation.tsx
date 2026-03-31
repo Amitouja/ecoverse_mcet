@@ -26,21 +26,25 @@ export default function Navigation() {
     <>
       <nav className="sticky top-0 z-[500] bg-[rgba(247,244,239,0.98)] backdrop-blur-[16px] border-b border-[rgba(26,26,20,0.08)] px-[52px] grid grid-cols-[1fr_auto_1fr] items-center h-[72px] md:px-5 md:grid-cols-[auto_1fr] shadow-[0_2px_12px_rgba(26,26,20,0.04)]">
         <div className="flex gap-8 items-center md:hidden">
+          <a href="/" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-moss">
+            Home 
+            <span className="absolute bottom-[-3px] left-0 right-0 h-[2px] bg-moss scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+          </a>
           <a href="#shop" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-moss">
             Shop 
             <span className="absolute bottom-[-3px] left-0 right-0 h-[2px] bg-moss scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
           </a>
-          <a href="#eco-ranks" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-moss">
-            Eco Ranks
+          <a href="/travel" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-moss">
+            Travel ✈️
             <span className="absolute bottom-[-3px] left-0 right-0 h-[2px] bg-moss scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
           </a>
-          <a href="#rewards" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-moss">
-            Rewards
+          <a href="/electricity" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-moss">
+            Energy ⚡
             <span className="absolute bottom-[-3px] left-0 right-0 h-[2px] bg-moss scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
           </a>
-          <a href="#ai-stylist" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-moss">
-            AI Stylist
-            <span className="absolute bottom-[-3px] left-0 right-0 h-[2px] bg-moss scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+          <a href="/ml-results" className="font-jost font-medium text-[0.75rem] tracking-[0.12em] uppercase text-ink/70 no-underline transition-all duration-250 relative group hover:text-fern">
+            ML 🤖
+            <span className="absolute bottom-[-3px] left-0 right-0 h-[2px] bg-fern scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
           </a>
         </div>
         

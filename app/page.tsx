@@ -338,7 +338,7 @@ function Navigation({ activeTab, setActiveTab, onSignInClick, user, onSignOut }:
     }}>
       {/* Left tabs */}
       <div style={{ display:"flex", gap:"24px" }}>
-        {["SHOP","ECO RANKS","REWARDS","AI STYLIST"].map(item => (
+        {["SHOP","ECO RANKS","REWARDS","AI STYLIST","TRAVEL IMPACT","ELECTRICITY IMPACT"].map(item => (
           <button key={item} onClick={() => setActiveTab(item)} style={{
             background:"none", border:"none", cursor:"pointer",
             fontFamily:"var(--font-jost,sans-serif)", fontSize:"11px", fontWeight:700, letterSpacing:"0.1em",
@@ -1173,6 +1173,316 @@ function Footer() {
   );
 }
 
+// ─── Travel Data Component ─────────────────────────────────────────────────────
+function TravelData() {
+  interface TravelEntry {
+    type: 'flight' | 'car' | 'train' | 'bus';
+    distance: number;
+    passengers: number;
+  }
+
+  const [entries, setEntries] = useState<TravelEntry[]>([]);
+  const [newEntry, setNewEntry] = useState<TravelEntry>({ type: 'flight', distance: 0, passengers: 1 });
+
+  const addEntry = () => {
+    if (newEntry.distance > 0) {
+      setEntries([...entries, newEntry]);
+      setNewEntry({ type: 'flight', distance: 0, passengers: 1 });
+    }
+  };
+
+  const removeEntry = (index: number) => {
+    setEntries(entries.filter((_, i) => i !== index));
+  };
+
+  const calculateCarbonFootprint = () => {
+    return entries.reduce((total, entry) => {
+      const baseEmission = {
+        flight: 0.25, // kg CO2 per km
+        car: 0.12,
+        train: 0.04,
+        bus: 0.08
+      }[entry.type];
+
+      return total + (baseEmission * entry.distance / entry.passengers);
+    }, 0);
+  };
+
+  const totalFootprint = calculateCarbonFootprint();
+
+  return (
+    <section style={{ padding:"80px 52px",borderTop:"1px solid rgba(26,26,20,0.1)" }}>
+      <span style={{ fontFamily:"var(--font-space-mono,monospace)",fontSize:"10px",letterSpacing:"0.22em",color:"#6b8c6b",display:"block",marginBottom:12,textAlign:"center" }}>// TRAVEL IMPACT CALCULATOR</span>
+      <h2 style={{ fontFamily:"var(--font-playfair,serif)",fontSize:"clamp(28px,3.5vw,44px)",fontWeight:700,textAlign:"center",marginBottom:16,lineHeight:1.1 }}>
+        Track Your <span style={{ color:"#4a7c59",fontStyle:"italic" }}>Travel Footprint</span>
+      </h2>
+      <p style={{ fontSize:"15px",color:"#4a4a3a",maxWidth:600,margin:"0 auto 48px",textAlign:"center",lineHeight:1.8 }}>
+        Calculate the carbon emissions from your travel and discover ways to reduce your environmental impact.
+      </p>
+
+      {/* Add Travel Entry */}
+      <div style={{ maxWidth:400,margin:"0 auto 48px",padding:24,background:"white",borderRadius:12,boxShadow:"0 4px 24px rgba(0,0,0,0.08)",border:"1px solid rgba(26,26,20,0.05)" }}>
+        <h3 style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:18,fontWeight:600,marginBottom:20,color:"#1a1a14" }}>Add Travel Entry</h3>
+        <div style={{ display:"flex",flexDirection:"column",gap:16 }}>
+          <div>
+            <label style={{ display:"block",fontSize:13,fontWeight:500,marginBottom:4,color:"#4a4a3a" }}>Travel Type</label>
+            <select
+              value={newEntry.type}
+              onChange={(e) => setNewEntry({ ...newEntry, type: e.target.value as TravelEntry['type'] })}
+              style={{ width:"100%",padding:"12px 16px",border:"1.5px solid rgba(26,26,20,0.2)",background:"white",fontFamily:"var(--font-jost,sans-serif)",fontSize:14,color:"#1a1a14",borderRadius:8,outline:"none" }}
+            >
+              <option value="flight">✈️ Flight</option>
+              <option value="car">🚗 Car</option>
+              <option value="train">🚂 Train</option>
+              <option value="bus">🚌 Bus</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display:"block",fontSize:13,fontWeight:500,marginBottom:4,color:"#4a4a3a" }}>Distance (km)</label>
+            <input
+              type="number"
+              value={newEntry.distance}
+              onChange={(e) => setNewEntry({ ...newEntry, distance: Number(e.target.value) })}
+              style={{ width:"100%",padding:"12px 16px",border:"1.5px solid rgba(26,26,20,0.2)",background:"white",fontFamily:"var(--font-jost,sans-serif)",fontSize:14,color:"#1a1a14",borderRadius:8,outline:"none" }}
+              placeholder="Enter distance"
+            />
+          </div>
+          <div>
+            <label style={{ display:"block",fontSize:13,fontWeight:500,marginBottom:4,color:"#4a4a3a" }}>Passengers</label>
+            <input
+              type="number"
+              min="1"
+              value={newEntry.passengers}
+              onChange={(e) => setNewEntry({ ...newEntry, passengers: Number(e.target.value) })}
+              style={{ width:"100%",padding:"12px 16px",border:"1.5px solid rgba(26,26,20,0.2)",background:"white",fontFamily:"var(--font-jost,sans-serif)",fontSize:14,color:"#1a1a14",borderRadius:8,outline:"none" }}
+            />
+          </div>
+          <button
+            onClick={addEntry}
+            style={{ width:"100%",background:"#4a7c59",color:"white",padding:14,borderRadius:8,fontFamily:"var(--font-jost,sans-serif)",fontSize:14,fontWeight:600,border:"none",cursor:"pointer",transition:"background 0.2s" }}
+            onMouseEnter={(e) => (e.target as HTMLElement).style.background = "#2d5a3d"}
+            onMouseLeave={(e) => (e.target as HTMLElement).style.background = "#4a7c59"}
+          >
+            Add Travel Entry
+          </button>
+        </div>
+      </div>
+
+      {/* Travel Entries List */}
+      {entries.length > 0 && (
+        <div style={{ maxWidth:800,margin:"0 auto 48px" }}>
+          <h3 style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:20,fontWeight:600,marginBottom:24,color:"#1a1a14",textAlign:"center" }}>Your Travel Entries</h3>
+          <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+            {entries.map((entry, index) => (
+              <div key={index} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:16,background:"white",borderRadius:8,boxShadow:"0 2px 12px rgba(0,0,0,0.06)",border:"1px solid rgba(26,26,20,0.05)" }}>
+                <div style={{ display:"flex",alignItems:"center",gap:16 }}>
+                  <span style={{ fontSize:24 }}>
+                    {entry.type === 'flight' ? '✈️' : entry.type === 'car' ? '🚗' : entry.type === 'train' ? '🚂' : '🚌'}
+                  </span>
+                  <div>
+                    <p style={{ fontWeight:500,color:"#1a1a14",textTransform:"capitalize",margin:0 }}>{entry.type}</p>
+                    <p style={{ fontSize:13,color:"#4a4a3a",margin:4 }}>{entry.distance} km • {entry.passengers} passenger{entry.passengers > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <div style={{ display:"flex",alignItems:"center",gap:12 }}>
+                  <span style={{ fontSize:14,fontWeight:500,color:"#4a7c59" }}>
+                    {(entry.distance / entry.passengers * {
+                      flight: 0.25,
+                      car: 0.12,
+                      train: 0.04,
+                      bus: 0.08
+                    }[entry.type]).toFixed(1)} kg CO₂
+                  </span>
+                  <button
+                    onClick={() => removeEntry(index)}
+                    style={{ color:"#4a4a3a",fontSize:16,cursor:"pointer",background:"none",border:"none",padding:4 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Carbon Footprint Summary */}
+      {totalFootprint > 0 && (
+        <div style={{ maxWidth:400,margin:"0 auto",textAlign:"center" }}>
+          <div style={{ padding:32,background:"linear-gradient(135deg, rgba(74,130,107,0.1) 0%, rgba(45,90,61,0.1) 100%)",borderRadius:16,border:"1px solid rgba(74,130,107,0.2)" }}>
+            <h3 style={{ fontFamily:"var(--font-playfair,serif)",fontSize:24,fontWeight:700,marginBottom:8,color:"#1a1a14" }}>Total Carbon Footprint</h3>
+            <p style={{ fontSize:36,fontWeight:700,marginBottom:16,color:"#4a7c59" }}>{totalFootprint.toFixed(1)} kg CO₂</p>
+            <p style={{ fontSize:13,color:"#4a4a3a",marginBottom:24 }}>
+              Equivalent to planting {Math.ceil(totalFootprint / 20)} trees to offset this impact.
+            </p>
+            <button style={{ background:"#4a7c59",color:"white",padding:"12px 24px",borderRadius:8,fontFamily:"var(--font-jost,sans-serif)",fontSize:14,fontWeight:600,border:"none",cursor:"pointer",transition:"background 0.2s" }}
+              onMouseEnter={(e) => (e.target as HTMLElement).style.background = "#2d5a3d"}
+              onMouseLeave={(e) => (e.target as HTMLElement).style.background = "#4a7c59"}>
+              🌱 Offset with Eco Purchase
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ─── Electricity Usage Component ───────────────────────────────────────────────
+function ElectricityUsage() {
+  const [data, setData] = useState({ monthlyUsage: 0, energySource: 'grid', householdSize: 1 });
+
+  const calculateCarbonFootprint = () => {
+    const baseEmission = {
+      grid: 0.4, // kg CO2 per kWh (average grid mix)
+      renewable: 0.02, // kg CO2 per kWh (solar/wind)
+      mixed: 0.2 // kg CO2 per kWh (mixed sources)
+    }[data.energySource] || 0.4; // default to grid if unknown
+
+    return baseEmission * data.monthlyUsage;
+  };
+
+  const calculateAnnualFootprint = () => calculateCarbonFootprint() * 12;
+
+  const getRecommendations = () => {
+    const footprint = calculateCarbonFootprint();
+    const recommendations = [];
+
+    if (data.energySource === 'grid') {
+      recommendations.push("Consider switching to renewable energy sources like solar panels");
+    }
+
+    if (footprint > 50) {
+      recommendations.push("Install LED bulbs and energy-efficient appliances");
+    }
+
+    if (data.monthlyUsage > 300) {
+      recommendations.push("Unplug electronics when not in use and use smart power strips");
+    }
+
+    recommendations.push("Monitor usage with smart meters and set conservation goals");
+
+    return recommendations;
+  };
+
+  const footprint = calculateCarbonFootprint();
+  const annualFootprint = calculateAnnualFootprint();
+
+  return (
+    <section style={{ padding:"80px 52px",borderTop:"1px solid rgba(26,26,20,0.1)" }}>
+      <span style={{ fontFamily:"var(--font-space-mono,monospace)",fontSize:"10px",letterSpacing:"0.22em",color:"#6b8c6b",display:"block",marginBottom:12,textAlign:"center" }}>// ELECTRICITY IMPACT CALCULATOR</span>
+      <h2 style={{ fontFamily:"var(--font-playfair,serif)",fontSize:"clamp(28px,3.5vw,44px)",fontWeight:700,textAlign:"center",marginBottom:16,lineHeight:1.1 }}>
+        Monitor Your <span style={{ color:"#4a7c59",fontStyle:"italic" }}>Electricity Usage</span>
+      </h2>
+      <p style={{ fontSize:"15px",color:"#4a4a3a",maxWidth:600,margin:"0 auto 48px",textAlign:"center",lineHeight:1.8 }}>
+        Track your household electricity consumption and calculate your carbon footprint from energy use.
+      </p>
+
+      {/* Input Form */}
+      <div style={{ maxWidth:400,margin:"0 auto 48px",padding:24,background:"white",borderRadius:12,boxShadow:"0 4px 24px rgba(0,0,0,0.08)",border:"1px solid rgba(26,26,20,0.05)" }}>
+        <h3 style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:18,fontWeight:600,marginBottom:24,color:"#1a1a14" }}>Electricity Details</h3>
+        <div style={{ display:"flex",flexDirection:"column",gap:20 }}>
+          <div>
+            <label style={{ display:"block",fontSize:13,fontWeight:500,marginBottom:6,color:"#4a4a3a" }}>Monthly Usage (kWh)</label>
+            <input
+              type="number"
+              value={data.monthlyUsage}
+              onChange={(e) => setData({ ...data, monthlyUsage: Number(e.target.value) })}
+              style={{ width:"100%",padding:"12px 16px",border:"1.5px solid rgba(26,26,20,0.2)",background:"white",fontFamily:"var(--font-jost,sans-serif)",fontSize:14,color:"#1a1a14",borderRadius:8,outline:"none" }}
+              placeholder="Enter kWh used per month"
+            />
+            <p style={{ fontSize:11,color:"#4a4a3a",marginTop:4 }}>Check your electricity bill for this information</p>
+          </div>
+
+          <div>
+            <label style={{ display:"block",fontSize:13,fontWeight:500,marginBottom:6,color:"#4a4a3a" }}>Energy Source</label>
+            <select
+              value={data.energySource}
+              onChange={(e) => setData({ ...data, energySource: e.target.value })}
+              style={{ width:"100%",padding:"12px 16px",border:"1.5px solid rgba(26,26,20,0.2)",background:"white",fontFamily:"var(--font-jost,sans-serif)",fontSize:14,color:"#1a1a14",borderRadius:8,outline:"none" }}
+            >
+              <option value="grid">🔌 Grid Electricity (Standard)</option>
+              <option value="renewable">☀️ Renewable Energy (Solar/Wind)</option>
+              <option value="mixed">⚡ Mixed Sources</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display:"block",fontSize:13,fontWeight:500,marginBottom:6,color:"#4a4a3a" }}>Household Size</label>
+            <input
+              type="number"
+              min="1"
+              value={data.householdSize}
+              onChange={(e) => setData({ ...data, householdSize: Number(e.target.value) })}
+              style={{ width:"100%",padding:"12px 16px",border:"1.5px solid rgba(26,26,20,0.2)",background:"white",fontFamily:"var(--font-jost,sans-serif)",fontSize:14,color:"#1a1a14",borderRadius:8,outline:"none" }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      {data.monthlyUsage > 0 && (
+        <div style={{ maxWidth:900,margin:"0 auto" }}>
+          {/* Carbon Footprint Cards */}
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(250px, 1fr))",gap:24,marginBottom:48 }}>
+            <div style={{ padding:24,background:"white",borderRadius:12,boxShadow:"0 2px 12px rgba(0,0,0,0.06)",border:"1px solid rgba(26,26,20,0.05)",textAlign:"center" }}>
+              <h4 style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:18,fontWeight:600,marginBottom:8,color:"#1a1a14" }}>Monthly Footprint</h4>
+              <p style={{ fontSize:32,fontWeight:700,marginBottom:4,color:"#4a7c59" }}>{footprint.toFixed(1)} kg CO₂</p>
+              <p style={{ fontSize:13,color:"#4a4a3a" }}>Carbon emissions per month</p>
+            </div>
+            <div style={{ padding:24,background:"white",borderRadius:12,boxShadow:"0 2px 12px rgba(0,0,0,0.06)",border:"1px solid rgba(26,26,20,0.05)",textAlign:"center" }}>
+              <h4 style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:18,fontWeight:600,marginBottom:8,color:"#1a1a14" }}>Annual Footprint</h4>
+              <p style={{ fontSize:32,fontWeight:700,marginBottom:4,color:"#4a7c59" }}>{annualFootprint.toFixed(1)} kg CO₂</p>
+              <p style={{ fontSize:13,color:"#4a4a3a" }}>Carbon emissions per year</p>
+            </div>
+          </div>
+
+          {/* Per Person Breakdown */}
+          <div style={{ padding:24,background:"linear-gradient(90deg, rgba(168,200,168,0.2) 0%, rgba(61,122,80,0.1) 100%)",borderRadius:12,border:"1px solid rgba(61,122,80,0.2)",marginBottom:32 }}>
+            <h4 style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:18,fontWeight:600,marginBottom:16,color:"#1a1a14" }}>Per Person Impact</h4>
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+              <div style={{ textAlign:"center" }}>
+                <p style={{ fontSize:24,fontWeight:700,color:"#3d7a50" }}>{(footprint / data.householdSize).toFixed(1)}</p>
+                <p style={{ fontSize:13,color:"#4a4a3a" }}>kg CO₂/month per person</p>
+              </div>
+              <div style={{ textAlign:"center" }}>
+                <p style={{ fontSize:24,fontWeight:700,color:"#3d7a50" }}>{(annualFootprint / data.householdSize).toFixed(1)}</p>
+                <p style={{ fontSize:13,color:"#4a4a3a" }}>kg CO₂/year per person</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          <div style={{ padding:24,background:"white",borderRadius:12,boxShadow:"0 2px 12px rgba(0,0,0,0.06)",border:"1px solid rgba(26,26,20,0.05)" }}>
+            <h4 style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:18,fontWeight:600,marginBottom:16,color:"#1a1a14",display:"flex",alignItems:"center",gap:8 }}>
+              💡 Eco-Friendly Recommendations
+            </h4>
+            <ul style={{ display:"flex",flexDirection:"column",gap:12 }}>
+              {getRecommendations().map((rec, index) => (
+                <li key={index} style={{ display:"flex",alignItems:"flex-start",gap:12 }}>
+                  <span style={{ color:"#4a7c59",marginTop:2 }}>•</span>
+                  <span style={{ color:"#4a4a3a",lineHeight:1.5 }}>{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Offset Action */}
+          <div style={{ textAlign:"center",marginTop:32 }}>
+            <button style={{ background:"#4a7c59",color:"white",padding:"14px 32px",borderRadius:8,fontFamily:"var(--font-jost,sans-serif)",fontSize:14,fontWeight:600,border:"none",cursor:"pointer",transition:"background 0.2s",display:"inline-flex",alignItems:"center",gap:8 }}
+              onMouseEnter={(e) => (e.target as HTMLElement).style.background = "#2d5a3d"}
+              onMouseLeave={(e) => (e.target as HTMLElement).style.background = "#4a7c59"}>
+              🌱 Offset Carbon with Eco Purchase
+            </button>
+            <p style={{ fontSize:13,color:"#4a4a3a",marginTop:12 }}>
+              Support renewable energy projects and reduce your carbon footprint
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [activeTab, setActiveTab] = useState("SHOP");
@@ -1193,6 +1503,8 @@ export default function Home() {
       case "ECO RANKS":  return <EcoRanks/>;
       case "REWARDS":    return <EcoRewards/>;
       case "AI STYLIST": return <EcoBot/>;
+      case "TRAVEL IMPACT": return <TravelData/>;
+      case "ELECTRICITY IMPACT": return <ElectricityUsage/>;
       default: return (<><Hero onShopClick={scrollToShop}/><Categories/><ImpactStrip/><div ref={shopRef}><Shop/></div><EcoRanks/><EcoRewards/><EcoBot/></>);
     }
   };
