@@ -1,0 +1,16 @@
+{
+  "model_type": "RandomForest",
+  "test_r2_score": 0.921326857118572,
+  "features": [
+    "shopping_spend",
+    "online_orders",
+    "fast_fashion",
+    "eco_products",
+    "car_km",
+    "flights_per_year",
+    "electricity_kwh",
+    "diet_type",
+    "household_size"
+  ],
+  "created": "2026-04-01T02:07:52.874000"
+}

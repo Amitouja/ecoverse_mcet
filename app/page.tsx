@@ -1095,7 +1095,7 @@ function EcoBot() {
 
   return (
     <section ref={ref as React.RefObject<HTMLElement>} style={{ background:"rgba(240,236,227,0.97)",position:"relative",zIndex:2 }}>
-      <SectionHeader label="// AI STYLIST" title="Meet" accent="EcoBot" subtitle="Powered by Claude AI"/>
+      <SectionHeader label="// AI STYLIST" title="Meet" accent="EcoBot" subtitle="Built by Amitouja "/>
       <div style={{ padding:"48px 72px 80px",maxWidth:1100,margin:"0 auto" }}>
         <p style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:"15px",color:"#5a6a5a",maxWidth:460,lineHeight:1.78,marginBottom:36,opacity:visible?1:0,transition:"opacity 0.8s" }}>Your personal AI sustainability guide — eco scores, outfit ideas, carbon savings, and style tips.</p>
         <div style={{ display:"grid",gridTemplateColumns:"1fr 0.54fr",gap:28,alignItems:"start" }}>
@@ -1106,7 +1106,7 @@ function EcoBot() {
                 <div style={{ fontFamily:"var(--font-playfair,serif)",fontSize:"18px",fontWeight:700,color:"white" }}>EcoBot</div>
                 <div style={{ display:"flex",alignItems:"center",gap:6,marginTop:2 }}>
                   <span style={{ width:6,height:6,borderRadius:"50%",background:"#a8d5a2",display:"inline-block",animation:"pulse 2s ease-in-out infinite" }}/>
-                  <span style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",color:"#a8d5a2" }}>Claude AI · Active</span>
+                  <span style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",color:"#a8d5a2" }}>Amitouja · Active</span>
                 </div>
               </div>
             </div>

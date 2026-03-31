@@ -1,7 +1,7 @@
 "use client";
 
-import MLPredictor from "./components/MLPredictor";
-import Navigation from "./components/Navigation";
+import MLPredictor from "@/app/components/MLPredictor";
+import Navigation from "@/app/components/Navigation";
 
 export default function MLPredictorPage() {
   return (

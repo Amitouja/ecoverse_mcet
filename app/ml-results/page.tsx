@@ -237,7 +237,7 @@ export default function MLResultsPage() {
                     <div className="p-6 bg-white rounded-xl shadow-lg border border-ink/10">
                       <h3 className="font-bold text-lg mb-4 text-ink">Carbon Breakdown</h3>
                       <div className="space-y-3">
-                        {Object.entries(result.data.breakdown).map(([key, value]) => (
+                        {result.data && Object.entries(result.data.breakdown).map(([key, value]) => (
                           <div key={key}>
                             <div className="flex justify-between mb-1">
                               <span className="text-sm font-medium text-mid capitalize">{key}</span>
@@ -246,7 +246,7 @@ export default function MLResultsPage() {
                             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-fern rounded-full"
-                                style={{ width: `${(value / result.data.totalCarbonFootprint) * 100}%` }}
+                                style={{ width: `${(value / (result.data?.totalCarbonFootprint || 1)) * 100}%` }}
                               />
                             </div>
                           </div>
