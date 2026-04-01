@@ -3,9 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Product { id:number; name:string; material:string; price:string; pts:string; tag:"ORGANIC"|"RECYCLED"|"VEGAN"; ecoScore:number; img:string; bgColor:string; }
+interface Product { id:number; name:string; material:string; price:string; priceNum:number; pts:string; tag:"ORGANIC"|"RECYCLED"|"VEGAN"; ecoScore:number; img:string; bgColor:string; }
 interface Category { name:string; count:number; img:string; bg:string; }
 interface AuthUser { name:string; email:string; pts:number; }
+interface CartItem { product:Product; quantity:number; }
+interface CheckoutData { fullName:string; email:string; phone:string; address:string; city:string; state:string; pincode:string; cardNumber:string; cardName:string; cardExpiry:string; cardCVV:string; }
+interface Order { id?:string; user_email:string; items:CartItem[]; total:number; address:CheckoutData; status:string; created_at?:string; }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const categories: Category[] = [
@@ -18,16 +21,16 @@ const categories: Category[] = [
 ];
 
 const products: Product[] = [
-  { id:1,  name:"Organic Linen Tee",     material:"100% Organic Cotton",     price:"₹1,299", pts:"+50 pts", tag:"ORGANIC",  ecoScore:95, bgColor:"#eef5e8", img:"https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=700&q=85" },
-  { id:2,  name:"Recycled Bomber",       material:"Post-Consumer Polyester", price:"₹3,499", pts:"+70 pts", tag:"RECYCLED", ecoScore:88, bgColor:"#e8ede3", img:"https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=700&q=85" },
-  { id:3,  name:"Hemp Canvas Kicks",     material:"Natural Hemp Fibre",      price:"₹2,799", pts:"+60 pts", tag:"VEGAN",    ecoScore:91, bgColor:"#e3eaf0", img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700&q=85" },
-  { id:4,  name:"Bamboo Joggers",        material:"Organic Bamboo Blend",    price:"₹1,899", pts:"+45 pts", tag:"ORGANIC",  ecoScore:86, bgColor:"#f0ebe3", img:"https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=700&q=85" },
-  { id:5,  name:"Cactus Leather Jacket", material:"Nopal Cactus Leather",    price:"₹5,999", pts:"+80 pts", tag:"VEGAN",    ecoScore:82, bgColor:"#e8ede3", img:"https://images.unsplash.com/photo-1551028719-00167b16eac5?w=700&q=85" },
-  { id:6,  name:"Hemp Maxi Dress",       material:"Hemp & TENCEL™ Blend",    price:"₹2,499", pts:"+55 pts", tag:"ORGANIC",  ecoScore:93, bgColor:"#f0ebe3", img:"https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=700&q=85" },
-  { id:7,  name:"Recycled Denim",        material:"Post-Consumer Denim",     price:"₹2,199", pts:"+65 pts", tag:"RECYCLED", ecoScore:87, bgColor:"#e3eaf0", img:"https://images.unsplash.com/photo-1542272604-787c3835535d?w=700&q=85" },
-  { id:8,  name:"Cork Crossbody",        material:"Sustainable Cork Bark",   price:"₹1,699", pts:"+40 pts", tag:"VEGAN",    ecoScore:94, bgColor:"#e8d9c0", img:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=700&q=85" },
-  { id:9,  name:"Merino Sweater",        material:"Certified Merino Wool",   price:"₹3,999", pts:"+75 pts", tag:"ORGANIC",  ecoScore:89, bgColor:"#f0ebe3", img:"https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=700&q=85" },
-  { id:10, name:"Piñatex Sneakers",      material:"Pineapple Leaf Fibre",    price:"₹3,299", pts:"+68 pts", tag:"VEGAN",    ecoScore:90, bgColor:"#e8ede3", img:"https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=700&q=85" },
+  { id:1,  name:"Organic Linen Tee",     material:"100% Organic Cotton",     price:"₹1,299", priceNum:1299, pts:"+50 pts", tag:"ORGANIC",  ecoScore:95, bgColor:"#eef5e8", img:"https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=700&q=85" },
+  { id:2,  name:"Recycled Bomber",       material:"Post-Consumer Polyester", price:"₹3,499", priceNum:3499, pts:"+70 pts", tag:"RECYCLED", ecoScore:88, bgColor:"#e8ede3", img:"https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=700&q=85" },
+  { id:3,  name:"Hemp Canvas Kicks",     material:"Natural Hemp Fibre",      price:"₹2,799", priceNum:2799, pts:"+60 pts", tag:"VEGAN",    ecoScore:91, bgColor:"#e3eaf0", img:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700&q=85" },
+  { id:4,  name:"Bamboo Joggers",        material:"Organic Bamboo Blend",    price:"₹1,899", priceNum:1899, pts:"+45 pts", tag:"ORGANIC",  ecoScore:86, bgColor:"#f0ebe3", img:"https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=700&q=85" },
+  { id:5,  name:"Cactus Leather Jacket", material:"Nopal Cactus Leather",    price:"₹5,999", priceNum:5999, pts:"+80 pts", tag:"VEGAN",    ecoScore:82, bgColor:"#e8ede3", img:"https://images.unsplash.com/photo-1551028719-00167b16eac5?w=700&q=85" },
+  { id:6,  name:"Hemp Maxi Dress",       material:"Hemp & TENCEL™ Blend",    price:"₹2,499", priceNum:2499, pts:"+55 pts", tag:"ORGANIC",  ecoScore:93, bgColor:"#f0ebe3", img:"https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=700&q=85" },
+  { id:7,  name:"Recycled Denim",        material:"Post-Consumer Denim",     price:"₹2,199", priceNum:2199, pts:"+65 pts", tag:"RECYCLED", ecoScore:87, bgColor:"#e3eaf0", img:"https://images.unsplash.com/photo-1542272604-787c3835535d?w=700&q=85" },
+  { id:8,  name:"Cork Crossbody",        material:"Sustainable Cork Bark",   price:"₹1,699", priceNum:1699, pts:"+40 pts", tag:"VEGAN",    ecoScore:94, bgColor:"#e8d9c0", img:"https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=700&q=85" },
+  { id:9,  name:"Merino Sweater",        material:"Certified Merino Wool",   price:"₹3,999", priceNum:3999, pts:"+75 pts", tag:"ORGANIC",  ecoScore:89, bgColor:"#f0ebe3", img:"https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=700&q=85" },
+  { id:10, name:"Piñatex Sneakers",      material:"Pineapple Leaf Fibre",    price:"₹3,299", priceNum:3299, pts:"+68 pts", tag:"VEGAN",    ecoScore:90, bgColor:"#e8ede3", img:"https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=700&q=85" },
 ];
 
 const ecoRanks = [
@@ -44,6 +47,99 @@ const CHAT_SEED = [
 ];
 
 const SCRATCH_REWARDS = ["🎉 10% OFF","🚚 Free Shipping","🌿 2x Points","🎁 Mystery Gift","⭐ 100 Bonus Pts","💚 5% Cashback","🌱 Plant a Tree","✨ VIP Access"];
+
+// ─── Supabase Integration ──────────────────────────────────────────────────────
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+// Supabase client
+const createSupabaseClient = () => {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.warn("⚠️ Supabase credentials not configured. Using localStorage fallback.");
+    return null;
+  }
+  
+  return {
+    from: (table: string) => ({
+      insert: async (data: any) => {
+        try {
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${SUPABASE_KEY}`,
+              apiKey: SUPABASE_KEY,
+            },
+            body: JSON.stringify(data),
+          });
+          return { data: await response.json(), error: response.ok ? null : "Insert failed" };
+        } catch (error) {
+          return { data: null, error };
+        }
+      },
+      select: async () => ({
+        eq: async (column: string, value: any) => {
+          try {
+            const response = await fetch(
+              `${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${value}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${SUPABASE_KEY}`,
+                  apiKey: SUPABASE_KEY,
+                },
+              }
+            );
+            return { data: await response.json(), error: response.ok ? null : "Select failed" };
+          } catch (error) {
+            return { data: null, error };
+          }
+        },
+      }),
+    }),
+  };
+};
+
+// Save order to Supabase
+async function saveOrderToSupabase(order: Order) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    // Fallback to localStorage if Supabase not configured
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    orders.push({ ...order, id: Date.now().toString(), created_at: new Date().toISOString() });
+    localStorage.setItem("orders", JSON.stringify(orders));
+    return { success: true, message: "Order saved to localStorage" };
+  }
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        apiKey: SUPABASE_KEY,
+      },
+      body: JSON.stringify({
+        user_email: order.user_email,
+        items: order.items,
+        total: order.total,
+        address: order.address,
+        status: "pending",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save order");
+    }
+
+    return { success: true, message: "Order saved successfully" };
+  } catch (error) {
+    console.error("Error saving order:", error);
+    // Fallback to localStorage
+    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+    orders.push({ ...order, id: Date.now().toString(), created_at: new Date().toISOString() });
+    localStorage.setItem("orders", JSON.stringify(orders));
+    return { success: true, message: "Order saved to localStorage" };
+  }
+}
 
 // ─── Scroll Reveal Hook ───────────────────────────────────────────────────────
 function useScrollReveal(threshold = 0.1) {
@@ -845,7 +941,7 @@ function ImpactStrip() {
 }
 
 // ─── Shop ─────────────────────────────────────────────────────────────────────
-function Shop() {
+function Shop({ onAddToCart }: { onAddToCart:(p:Product)=>void }) {
   const { ref, visible } = useScrollReveal();
   const [filter, setFilter] = useState<"ALL"|"ORGANIC"|"RECYCLED"|"VEGAN">("ALL");
   const [hovered, setHovered] = useState<number|null>(null);
@@ -874,9 +970,9 @@ function Shop() {
                 style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform 0.6s ease",transform:hovered===p.id?"scale(1.07)":"scale(1)" }}
                 onError={e=>{(e.target as HTMLImageElement).src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80";}}/>
               <div style={{ position:"absolute",top:10,left:10,background:p.tag==="ORGANIC"?"#d4e6c3":p.tag==="RECYCLED"?"#c8d8e8":"#d4cce8",color:"#1a3a2a",padding:"3px 9px",borderRadius:20,fontFamily:"var(--font-jost,sans-serif)",fontSize:"9px",fontWeight:700,letterSpacing:"0.08em" }}>{p.tag}</div>
-              {hovered===p.id&&<div style={{ position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(to top,rgba(26,58,42,0.88),transparent)",padding:"18px 14px 12px",display:"flex",justifyContent:"center",animation:"fadeUp 0.22s ease" }}>
-                <button style={{ background:"white",color:"#1a3a2a",border:"none",borderRadius:20,padding:"7px 18px",fontFamily:"var(--font-jost,sans-serif)",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",cursor:"pointer" }}>ADD TO CART</button>
-              </div>}
+              <div style={{ position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(to top,rgba(26,58,42,0.88),transparent)",padding:"18px 14px 12px",display:"flex",justifyContent:"center",animation:"fadeUp 0.22s ease" }}>
+                <button onClick={() => onAddToCart(p)} style={{ background:"white",color:"#1a3a2a",border:"none",borderRadius:20,padding:"7px 18px",fontFamily:"var(--font-jost,sans-serif)",fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",cursor:"pointer" }}>ADD TO CART</button>
+              </div>
             </div>
             <div style={{ padding:"14px 14px 18px" }}>
               <div style={{ fontFamily:"var(--font-space-mono,monospace)",fontSize:"9px",letterSpacing:"0.1em",color:"#2d6a4f",marginBottom:5 }}>ECO {p.ecoScore}/100</div>
@@ -1086,10 +1182,29 @@ function EcoBot() {
     const text=input.trim(); setInput(""); setLoading(true);
     setMessages(m=>[...m,{from:"user",text}]);
     try {
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"You are EcoBot, an AI guide for EcoVerse — sustainable fashion in India. Help with eco scores, outfit ideas, carbon savings, Eco Points. Be warm, brief (2-4 sentences), use emojis. Use ₹ for prices.",messages:[{role:"user",content:text}]})});
-      const d=await res.json();
-      setMessages(m=>[...m,{from:"bot",text:d.content?.map((c:{type:string;text?:string})=>c.text||"").join("")||"Sorry, try again! 🌿"}]);
-    } catch{ setMessages(m=>[...m,{from:"bot",text:"Connection issue. Please try again! 🌿"}]); }
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) { setMessages(m=>[...m,{from:"bot",text:"⚠️ API key not configured. Please add NEXT_PUBLIC_GEMINI_API_KEY to .env.local"}]); setLoading(false); return; }
+      
+      const systemPrompt = "You are EcoBot, an AI guide for EcoVerse — sustainable fashion and lifestyle. Help with eco scores, outfit ideas, carbon savings, Eco Points, travel impact, electricity usage, and sustainable living. Be warm, brief (2-4 sentences), use emojis. Use ₹ for Indian prices. Focus on practical sustainability tips.";
+      const prompt = `${systemPrompt}\n\nUser: ${text}\n\nEcoBot:`;
+      
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 256, temperature: 0.8 }
+        })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || "API Error");
+      const botText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't generate a response. Please try again! 🌿";
+      setMessages(m => [...m, { from: "bot", text: botText }]);
+    } catch(err) { 
+      const errorMsg = err instanceof Error ? err.message : "Connection issue";
+      setMessages(m=>[...m,{from:"bot",text:`Connection issue: ${errorMsg}. Please try again! 🌿`}]); 
+    }
     finally { setLoading(false); }
   },[input,loading]);
 
@@ -1170,6 +1285,275 @@ function Footer() {
         <p style={{ fontFamily:"var(--font-space-mono,monospace)",fontSize:"10px",color:"#3a6a4a",margin:0 }}>Made with 🌿 for the planet</p>
       </div>
     </footer>
+  );
+}
+
+// ─── Shopping Cart Component ──────────────────────────────────────────────────
+function ShoppingCart({ cart, setCart, isOpen, onClose, user }: { cart:CartItem[]; setCart:(c:CartItem[])=>void; isOpen:boolean; onClose:()=>void; user:AuthUser|null }) {
+  const [checkoutStep, setCheckoutStep] = useState<'cart'|'address'|'payment'|'success'>('cart');
+  const [checkoutData, setCheckoutData] = useState<CheckoutData>({ fullName:'', email:user?.email||'', phone:'', address:'', city:'', state:'', pincode:'', cardNumber:'', cardName:'', cardExpiry:'', cardCVV:'' });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const updateQty = (productId:number, delta:number) => {
+    setCart(cart.map(item => item.product.id === productId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
+  };
+
+  const removeItem = (productId:number) => {
+    setCart(cart.filter(item => item.product.id !== productId));
+  };
+
+  const subtotal = cart.reduce((sum, item) => sum + item.product.priceNum * item.quantity, 0);
+  const shipping = subtotal > 999 ? 0 : 99;
+  const total = subtotal + shipping;
+  const totalPts = cart.reduce((sum, item) => sum + parseInt(item.product.pts) * item.quantity, 0);
+
+  const handleCheckout = async () => {
+    if (checkoutStep === 'cart') {
+      setCheckoutStep('address');
+    } else if (checkoutStep === 'address') {
+      if (!checkoutData.fullName || !checkoutData.email || !checkoutData.phone || !checkoutData.address || !checkoutData.city || !checkoutData.state || !checkoutData.pincode) {
+        setMessage('❌ Please fill all address fields');
+        return;
+      }
+      setCheckoutStep('payment');
+    } else if (checkoutStep === 'payment') {
+      if (!checkoutData.cardNumber || !checkoutData.cardName || !checkoutData.cardExpiry || !checkoutData.cardCVV) {
+        setMessage('❌ Please fill all payment fields');
+        return;
+      }
+      
+      setLoading(true);
+      setMessage('💳 Processing payment...');
+
+      try {
+        // Save order to Supabase
+        const orderResult = await saveOrderToSupabase({
+          user_email: checkoutData.email,
+          items: cart,
+          total: total,
+          address: checkoutData,
+          status: 'confirmed'
+        });
+
+        console.log('Order saved:', orderResult);
+        setMessage('✅ Order placed successfully!');
+        
+        setTimeout(() => {
+          setCheckoutStep('success');
+          setTimeout(() => {
+            setCart([]);
+            onClose();
+            setCheckoutStep('cart');
+            setCheckoutData({ fullName:'', email:user?.email||'', phone:'', address:'', city:'', state:'', pincode:'', cardNumber:'', cardName:'', cardExpiry:'', cardCVV:'' });
+            setMessage('');
+          }, 3000);
+        }, 800);
+      } catch (error) {
+        setMessage('❌ Error placing order. Please try again.');
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const inp: React.CSSProperties = { width:"100%", padding:"12px 16px", border:"1.5px solid #d8d3c8", background:"white", fontFamily:"var(--font-jost,sans-serif)", fontSize:"14px", color:"#1a1a1a", outline:"none", boxSizing:"border-box", borderRadius:"8px" };
+
+  return (
+    <>
+      <div style={{ position:"fixed", inset:0, zIndex:9998, background:"rgba(10,10,10,0.6)", backdropFilter:"blur(14px)" }} onClick={onClose}/>
+      <div style={{ position:"fixed", right:0, top:0, bottom:0, zIndex:9999, width:"min(540px, 92vw)", background:"#f5f2eb", boxShadow:"-8px 0 48px rgba(0,0,0,0.2)", display:"flex", flexDirection:"column", animation:"slideIn 0.35s cubic-bezier(0.16,1,0.3,1)" }}>
+        <div style={{ padding:"24px 28px", borderBottom:"1.5px solid #e0dbd0", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <h2 style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"24px", fontWeight:700, color:"#1a1a1a", margin:0 }}>
+            {checkoutStep === 'cart' ? '🛒 Shopping Cart' : checkoutStep === 'address' ? '📍 Delivery Address' : checkoutStep === 'payment' ? '💳 Payment' : '🎉 Order Confirmed!'}
+          </h2>
+          <button onClick={onClose} style={{ background:"none", border:"none", fontSize:28, color:"#aaa", cursor:"pointer" }}>×</button>
+        </div>
+
+        <div style={{ flex:1, overflowY:"auto", padding:"24px 28px" }}>
+          {checkoutStep === 'cart' && (
+            cart.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"80px 20px" }}>
+                <div style={{ fontSize:56, marginBottom:16 }}>🛒</div>
+                <h3 style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"20px", fontWeight:700, color:"#1a1a1a", marginBottom:8 }}>Your cart is empty</h3>
+                <p style={{ color:"#8a9a8a" }}>Start shopping to add items</p>
+              </div>
+            ) : (
+              <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+                {cart.map(item => (
+                  <div key={item.product.id} style={{ display:"flex", gap:16, background:"white", border:"1px solid #e0dbd0", borderRadius:12, padding:16 }}>
+                    <img src={item.product.img} alt={item.product.name} style={{ width:90, height:90, objectFit:"cover", borderRadius:8, background:item.product.bgColor }} onError={e => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&q=80"; }} />
+                    <div style={{ flex:1 }}>
+                      <h4 style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"16px", fontWeight:600, color:"#1a1a1a", margin:"0 0 4px" }}>{item.product.name}</h4>
+                      <p style={{ fontSize:"12px", color:"#8a9a8a", margin:"0 0 8px" }}>{item.product.material}</p>
+                      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, border:"1.5px solid #d8d3c8", borderRadius:20, padding:"4px 8px" }}>
+                          <button onClick={() => updateQty(item.product.id, -1)} style={{ background:"none", border:"none", fontSize:16, cursor:"pointer", color:"#1a1a1a" }}>−</button>
+                          <span style={{ fontSize:"14px", fontWeight:600, minWidth:20, textAlign:"center" }}>{item.quantity}</span>
+                          <button onClick={() => updateQty(item.product.id, 1)} style={{ background:"none", border:"none", fontSize:16, cursor:"pointer", color:"#1a1a1a" }}>+</button>
+                        </div>
+                        <span style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"16px", fontWeight:700, color:"#1a1a1a" }}>{item.product.price}</span>
+                        <button onClick={() => removeItem(item.product.id)} style={{ marginLeft:"auto", background:"none", border:"none", fontSize:18, color:"#c0392b", cursor:"pointer" }}>🗑</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {checkoutStep === 'address' && (
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              <input placeholder="Full Name *" value={checkoutData.fullName} onChange={e => setCheckoutData({...checkoutData, fullName:e.target.value})} style={inp} />
+              <input placeholder="Email Address *" type="email" value={checkoutData.email} onChange={e => setCheckoutData({...checkoutData, email:e.target.value})} style={inp} />
+              <input placeholder="Phone Number *" type="tel" value={checkoutData.phone} onChange={e => setCheckoutData({...checkoutData, phone:e.target.value})} style={inp} />
+              <textarea placeholder="Full Address *" value={checkoutData.address} onChange={e => setCheckoutData({...checkoutData, address:e.target.value})} style={{...inp, minHeight:80, resize:"vertical"}} />
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <input placeholder="City *" value={checkoutData.city} onChange={e => setCheckoutData({...checkoutData, city:e.target.value})} style={inp} />
+                <input placeholder="State *" value={checkoutData.state} onChange={e => setCheckoutData({...checkoutData, state:e.target.value})} style={inp} />
+              </div>
+              <input placeholder="Pincode *" value={checkoutData.pincode} onChange={e => setCheckoutData({...checkoutData, pincode:e.target.value})} style={inp} />
+            </div>
+          )}
+
+          {checkoutStep === 'payment' && (
+            <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+              <input placeholder="Card Number *" value={checkoutData.cardNumber} onChange={e => setCheckoutData({...checkoutData, cardNumber:e.target.value})} maxLength={16} style={inp} />
+              <input placeholder="Cardholder Name *" value={checkoutData.cardName} onChange={e => setCheckoutData({...checkoutData, cardName:e.target.value})} style={inp} />
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <input placeholder="MM/YY *" value={checkoutData.cardExpiry} onChange={e => setCheckoutData({...checkoutData, cardExpiry:e.target.value})} maxLength={5} style={inp} />
+                <input placeholder="CVV *" type="password" value={checkoutData.cardCVV} onChange={e => setCheckoutData({...checkoutData, cardCVV:e.target.value})} maxLength={3} style={inp} />
+              </div>
+              <div style={{ background:"#e8ede3", border:"1px solid #c8d8c8", borderRadius:8, padding:16, marginTop:8 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                  <span style={{ fontSize:18 }}>🔒</span>
+                  <span style={{ fontWeight:600, color:"#1a3a2a" }}>Secure Payment</span>
+                </div>
+                <p style={{ fontSize:"12px", color:"#4a6a4a", margin:0, lineHeight:1.5 }}>Your payment information is encrypted and secure.</p>
+              </div>
+            </div>
+          )}
+
+          {checkoutStep === 'success' && (
+            <div style={{ textAlign:"center", padding:"60px 20px" }}>
+              <div style={{ fontSize:72, marginBottom:24, animation:"successPop 0.6s cubic-bezier(0.34,1.56,0.64,1)" }}>🎉</div>
+              <h3 style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"26px", fontWeight:700, color:"#2d6a4f", marginBottom:12 }}>Order Placed Successfully!</h3>
+              <p style={{ fontSize:"15px", color:"#4a6a4a", lineHeight:1.7, marginBottom:24 }}>Thank you! You've earned <strong>{totalPts} Eco Points</strong>.</p>
+              <div style={{ background:"#d4e6c3", borderRadius:12, padding:20 }}>
+                <p style={{ fontSize:"13px", color:"#1a3a2a", margin:0 }}>🌱 You helped plant 2 trees!</p>
+              </div>
+            </div>
+          )}
+
+          {message && (
+            <div style={{ padding:12, background:message.includes('❌')?'#ffebee':'#e8f5e9', borderRadius:8, fontSize:13, textAlign:'center', marginTop:12 }}>
+              {message}
+            </div>
+          )}
+        </div>
+
+        {checkoutStep !== 'success' && cart.length > 0 && (
+          <div style={{ borderTop:"1.5px solid #e0dbd0", padding:"20px 28px", background:"white" }}>
+            <div style={{ marginBottom:16 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                <span style={{ fontSize:"13px", color:"#4a4a3a" }}>Subtotal</span>
+                <span style={{ fontSize:"13px", fontWeight:600, color:"#1a1a1a" }}>₹{subtotal.toLocaleString()}</span>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                <span style={{ fontSize:"13px", color:"#4a4a3a" }}>Shipping</span>
+                <span style={{ fontSize:"13px", fontWeight:600, color:shipping===0?"#2d6a4f":"#1a1a1a" }}>{shipping === 0 ? "FREE" : `₹${shipping}`}</span>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginTop:12, paddingTop:12, borderTop:"1px solid #e8e3d8" }}>
+                <span style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"16px", fontWeight:700, color:"#1a1a1a" }}>Total</span>
+                <span style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"18px", fontWeight:700, color:"#2d6a4f" }}>₹{total.toLocaleString()}</span>
+              </div>
+            </div>
+            <button onClick={handleCheckout} disabled={loading} style={{ width:"100%", background:loading?"#aaa":"#1a3a2a", color:"white", border:"none", borderRadius:8, padding:14, fontFamily:"var(--font-jost,sans-serif)", fontSize:"12px", fontWeight:700, letterSpacing:"0.1em", cursor:loading?"not-allowed":"pointer", opacity:loading?0.7:1 }}>
+              {loading ? '⏳ PROCESSING...' : checkoutStep === 'cart' ? 'PROCEED TO CHECKOUT →' : checkoutStep === 'address' ? 'CONTINUE TO PAYMENT →' : 'PLACE ORDER ₹' + total.toLocaleString()}
+            </button>
+          </div>
+        )}
+      </div>
+      <style>{`
+        @keyframes slideIn { from { transform:translateX(100%); } to { transform:translateX(0); } }
+        @keyframes successPop { 0% { transform:scale(0) rotate(-15deg); } 75% { transform:scale(1.15) rotate(4deg); } 100% { transform:scale(1) rotate(0); } }
+      `}</style>
+    </>
+  );
+}
+
+// ─── Main Page Component ──────────────────────────────────────────────────────
+export default function HomePage() {
+  const [user, setUser] = useState<AuthUser|null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const handleAddToCart = useCallback((product: Product) => {
+    setCart(prevCart => {
+      const existing = prevCart.find(item => item.product.id === product.id);
+      if (existing) {
+        return prevCart.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prevCart, { product, quantity: 1 }];
+    });
+    setCartOpen(true);
+  }, []);
+
+  const handleSignIn = useCallback(() => {
+    setUser({ name: "Eco Explorer", email: "user@ecoverse.com", pts: 250 });
+    setAuthModalOpen(false);
+  }, []);
+
+  const handleSignOut = useCallback(() => {
+    setUser(null);
+    setCart([]);
+  }, []);
+
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  return (
+    <div style={{ background:"#f5f2eb", minHeight:"100vh", fontFamily:'var(--font-jost,sans-serif)', position:"relative" }}>
+      <LeafParticleSystem />
+      <CustomCursor />
+      <AnnouncementBar />
+      
+      <Navigation activeTab="SHOP" setActiveTab={()=>{}} onSignInClick={() => setAuthModalOpen(true)} user={user} onSignOut={handleSignOut} />
+
+      <main style={{ position:"relative", zIndex:2 }}>
+        <Hero onShopClick={() => document.querySelector('[data-scroll-to="shop"]')?.scrollIntoView({ behavior: 'smooth' })} />
+        <Categories />
+        <div data-scroll-to="shop"><Shop onAddToCart={handleAddToCart} /></div>
+        <ImpactStrip />
+        <EcoRanks />
+        <TravelData />
+        <ElectricityUsage />
+      </main>
+
+      <Footer />
+
+      <ShoppingCart cart={cart} setCart={setCart} isOpen={cartOpen} onClose={() => setCartOpen(false)} user={user} />
+
+      {authModalOpen && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:10000 }}>
+          <div style={{ background:"white", borderRadius:12, padding:40, maxWidth:400, textAlign:"center" }}>
+            <h2 style={{ fontFamily:"var(--font-playfair,serif)", fontSize:28, color:"#1a1a1a", marginBottom:16 }}>Welcome to EcoVerse</h2>
+            <p style={{ color:"#555", marginBottom:24 }}>Sign in to start earning Eco Points!</p>
+            <button onClick={handleSignIn} style={{ width:"100%", background:"#1a3a2a", color:"white", border:"none", borderRadius:8, padding:12, fontWeight:700, marginBottom:12, cursor:"pointer" }}>Sign In / Sign Up</button>
+            <button onClick={() => setAuthModalOpen(false)} style={{ width:"100%", background:"#f0f0f0", color:"#1a1a1a", border:"none", borderRadius:8, padding:12, fontWeight:600, cursor:"pointer" }}>Continue as Guest</button>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-jost, sans-serif); }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+      `}</style>
+    </div>
   );
 }
 
@@ -1480,47 +1864,5 @@ function ElectricityUsage() {
         </div>
       )}
     </section>
-  );
-}
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
-export default function Home() {
-  const [activeTab, setActiveTab] = useState("SHOP");
-  const [showAuth,  setShowAuth]  = useState(false);
-  const [user,      setUser]      = useState<AuthUser|null>(null);
-  const shopRef = useRef<HTMLDivElement>(null);
-
-  useEffect(()=>{
-    try { const s=localStorage.getItem("ecoverse_session"); if(s)setUser(JSON.parse(s)); } catch {}
-  },[]);
-
-  const handleAuth    = (u:AuthUser) => { setUser(u); localStorage.setItem("ecoverse_session",JSON.stringify(u)); setShowAuth(false); };
-  const handleSignOut = ()           => { setUser(null); localStorage.removeItem("ecoverse_session"); };
-  const scrollToShop  = ()           => { setActiveTab("SHOP"); setTimeout(()=>shopRef.current?.scrollIntoView({behavior:"smooth"}),50); };
-
-  const renderSection = () => {
-    switch (activeTab) {
-      case "ECO RANKS":  return <EcoRanks/>;
-      case "REWARDS":    return <EcoRewards/>;
-      case "AI STYLIST": return <EcoBot/>;
-      case "TRAVEL IMPACT": return <TravelData/>;
-      case "ELECTRICITY IMPACT": return <ElectricityUsage/>;
-      default: return (<><Hero onShopClick={scrollToShop}/><Categories/><ImpactStrip/><div ref={shopRef}><Shop/></div><EcoRanks/><EcoRewards/><EcoBot/></>);
-    }
-  };
-
-  return (
-    <div style={{ minHeight:"100vh",background:"#f5f2eb",position:"relative" }}>
-      {/* Leaf particles — fixed, behind everything */}
-      <LeafParticleSystem/>
-      <CustomCursor/>
-      {showAuth&&<AuthModal onClose={()=>setShowAuth(false)} onAuth={handleAuth}/>}
-      <AnnouncementBar/>
-      <Navigation activeTab={activeTab} setActiveTab={setActiveTab} onSignInClick={()=>setShowAuth(true)} user={user} onSignOut={handleSignOut}/>
-      <div style={{ paddingTop: activeTab==="SHOP" ? 0 : 72, position:"relative", zIndex:2 }}>
-        {renderSection()}
-      </div>
-      <Footer/>
-    </div>
   );
 }
