@@ -52,7 +52,116 @@ const SCRATCH_REWARDS = ["🎉 10% OFF","🚚 Free Shipping","🌿 2x Points","�
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
-// Supabase client
+// Real-time Supabase Auth API
+const supabaseAuth = {
+  async signUp(email: string, password: string, name: string) {
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      // Fallback to localStorage
+      const users = JSON.parse(localStorage.getItem("ecoverse_users") || "{}");
+      if (users[email]) return { error: "Account already exists", data: null };
+      const user = { id: email, name, email, created_at: new Date().toISOString() };
+      users[email] = { ...user, password };
+      localStorage.setItem("ecoverse_users", JSON.stringify(users));
+      localStorage.setItem("ecoverse_session", JSON.stringify({ user, session: { access_token: email } }));
+      return { data: { user, session: { access_token: email } }, error: null };
+    }
+    try {
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apiKey: SUPABASE_KEY,
+        },
+        body: JSON.stringify({ email, password, data: { name } }),
+      });
+      const data = await response.json();
+      if (!response.ok) return { error: data.message || "Signup failed", data: null };
+      // Store session
+      if (data.session?.access_token) {
+        localStorage.setItem("ecoverse_session", JSON.stringify(data.session));
+      }
+      return { data, error: null };
+    } catch (error) {
+      return { error: String(error), data: null };
+    }
+  },
+
+  async signIn(email: string, password: string) {
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      // Fallback to localStorage
+      const users = JSON.parse(localStorage.getItem("ecoverse_users") || "{}");
+      const user = users[email];
+      if (!user || user.password !== password) return { error: "Invalid credentials", data: null };
+      localStorage.setItem("ecoverse_session", JSON.stringify({ user, session: { access_token: email } }));
+      return { data: { user, session: { access_token: email } }, error: null };
+    }
+    try {
+      const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apiKey: SUPABASE_KEY,
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) return { error: data.message || "Login failed", data: null };
+      // Store session
+      if (data.session?.access_token) {
+        localStorage.setItem("ecoverse_session", JSON.stringify(data.session));
+      }
+      return { data, error: null };
+    } catch (error) {
+      return { error: String(error), data: null };
+    }
+  },
+
+  async signOut() {
+    localStorage.removeItem("ecoverse_session");
+    return { error: null };
+  },
+
+  getSession() {
+    try {
+      const session = localStorage.getItem("ecoverse_session");
+      return session ? JSON.parse(session) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  onAuthStateChange(callback: (user: AuthUser | null) => void) {
+    // Check initial state
+    const session = this.getSession();
+    if (session?.user) {
+      callback({
+        name: session.user.name || session.user.email?.split("@")[0] || "User",
+        email: session.user.email,
+        pts: session.user.pts || 0,
+      });
+    } else {
+      callback(null);
+    }
+    
+    // Listen for storage changes (real-time across tabs and windows)
+    const handleStorageChange = () => {
+      const newSession = this.getSession();
+      if (newSession?.user) {
+        callback({
+          name: newSession.user.name || newSession.user.email?.split("@")[0] || "User",
+          email: newSession.user.email,
+          pts: newSession.user.pts || 0,
+        });
+      } else {
+        callback(null);
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  },
+};
+
+// Supabase client for orders
 const createSupabaseClient = () => {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     console.warn("⚠️ Supabase credentials not configured. Using localStorage fallback.");
@@ -473,28 +582,41 @@ function AuthModal({ onClose, onAuth }: { onClose:()=>void; onAuth:(u:AuthUser)=
   const [form, setForm]   = useState({ name:"", email:"", password:"" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const getUsers = () => { try { return JSON.parse(localStorage.getItem("ecoverse_users")||"{}"); } catch { return {}; } };
-  const submit = () => {
+
+  const submit = async () => {
     setError("");
     if (!form.email||!form.password) { setError("Please fill all fields."); return; }
     if (mode==="signup"&&!form.name) { setError("Name is required."); return; }
     if (form.password.length<6) { setError("Password must be 6+ characters."); return; }
+    
     setLoading(true);
-    setTimeout(() => {
-      const users = getUsers();
+    try {
+      let result;
       if (mode==="signup") {
-        if (users[form.email]) { setError("Account exists. Sign in instead."); setLoading(false); return; }
-        users[form.email] = { ...form, pts:0 };
-        localStorage.setItem("ecoverse_users", JSON.stringify(users));
-        onAuth({ name:form.name, email:form.email, pts:0 });
+        result = await supabaseAuth.signUp(form.email, form.password, form.name);
       } else {
-        const u = users[form.email];
-        if (!u) { setError("No account found. Sign up first."); setLoading(false); return; }
-        if (u.password!==form.password) { setError("Incorrect password."); setLoading(false); return; }
-        onAuth({ name:u.name, email:u.email, pts:u.pts });
+        result = await supabaseAuth.signIn(form.email, form.password);
       }
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        // Get user from session
+        const session = supabaseAuth.getSession();
+        if (session?.user || (session?.session && form.email)) {
+          const user: AuthUser = {
+            name: session?.user?.name || form.name || form.email.split("@")[0],
+            email: session?.user?.email || form.email,
+            pts: session?.user?.pts || 0,
+          };
+          onAuth(user);
+        }
+      }
+    } catch (err) {
+      setError(String(err));
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
   const inp: React.CSSProperties = { width:"100%",padding:"13px 16px",border:"1.5px solid #d8d3c8",background:"white",fontFamily:"var(--font-jost,sans-serif)",fontSize:"14px",color:"#1a1a1a",outline:"none",boxSizing:"border-box",borderRadius:"8px" };
   return (
@@ -516,8 +638,8 @@ function AuthModal({ onClose, onAuth }: { onClose:()=>void; onAuth:(u:AuthUser)=
           <input placeholder="Password" type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&submit()} style={inp}/>
         </div>
         {error&&<p style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:12,color:"#c0392b",margin:"10px 0 0" }}>⚠ {error}</p>}
-        <button onClick={submit} disabled={loading} style={{ width:"100%",marginTop:20,background:loading?"#5a8a6a":"#1a3a2a",color:"white",border:"none",padding:15,borderRadius:10,fontFamily:"var(--font-jost,sans-serif)",fontSize:12,fontWeight:700,letterSpacing:"0.14em",cursor:loading?"default":"pointer",transition:"background 0.2s" }}>
-          {loading?"...":(mode==="signin"?"SIGN IN →":"CREATE ACCOUNT →")}
+        <button onClick={submit} disabled={loading} style={{ width:"100%",marginTop:20,background:loading?"#5a8a6a":"#1a3a2a",color:"white",border:"none",padding:15,borderRadius:10,fontFamily:"var(--font-jost,sans-serif)",fontSize:12,fontWeight:700,letterSpacing:"0.14em",cursor:loading?"not-allowed":"pointer",opacity:loading?0.7:1,transition:"all 0.2s" }}>
+          {loading?"🔐 PROCESSING...":(mode==="signin"?"SIGN IN →":"CREATE ACCOUNT →")}
         </button>
         <p style={{ fontFamily:"var(--font-jost,sans-serif)",fontSize:12,color:"#8a9a8a",textAlign:"center",marginTop:16 }}>
           {mode==="signin"?"No account? ":"Already have one? "}
@@ -1503,14 +1625,24 @@ export default function HomePage() {
     setCartOpen(true);
   }, []);
 
-  const handleSignIn = useCallback(() => {
-    setUser({ name: "Eco Explorer", email: "user@ecoverse.com", pts: 250 });
+  // Real-time auth state listener
+  useEffect(() => {
+    const unsubscribe = supabaseAuth.onAuthStateChange((currentUser) => {
+      setUser(currentUser);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleSignIn = useCallback((user: AuthUser) => {
+    setUser(user);
     setAuthModalOpen(false);
   }, []);
 
-  const handleSignOut = useCallback(() => {
+  const handleSignOut = useCallback(async () => {
+    await supabaseAuth.signOut();
     setUser(null);
     setCart([]);
+    setAuthModalOpen(false);
   }, []);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -1538,14 +1670,7 @@ export default function HomePage() {
       <ShoppingCart cart={cart} setCart={setCart} isOpen={cartOpen} onClose={() => setCartOpen(false)} user={user} />
 
       {authModalOpen && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:10000 }}>
-          <div style={{ background:"white", borderRadius:12, padding:40, maxWidth:400, textAlign:"center" }}>
-            <h2 style={{ fontFamily:"var(--font-playfair,serif)", fontSize:28, color:"#1a1a1a", marginBottom:16 }}>Welcome to EcoVerse</h2>
-            <p style={{ color:"#555", marginBottom:24 }}>Sign in to start earning Eco Points!</p>
-            <button onClick={handleSignIn} style={{ width:"100%", background:"#1a3a2a", color:"white", border:"none", borderRadius:8, padding:12, fontWeight:700, marginBottom:12, cursor:"pointer" }}>Sign In / Sign Up</button>
-            <button onClick={() => setAuthModalOpen(false)} style={{ width:"100%", background:"#f0f0f0", color:"#1a1a1a", border:"none", borderRadius:8, padding:12, fontWeight:600, cursor:"pointer" }}>Continue as Guest</button>
-          </div>
-        </div>
+        <AuthModal onClose={() => setAuthModalOpen(false)} onAuth={handleSignIn} />
       )}
 
       <style>{`
