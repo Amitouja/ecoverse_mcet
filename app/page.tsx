@@ -278,7 +278,7 @@ interface Leaf {
   maxLife: number;
 }
 
-function LeafParticleSystem() {
+function LeafParticleSystem({ darkMode }: { darkMode: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const raf = useRef(0);
   const wind = useRef({ x: 0.3, turbulence: 0 });
@@ -340,7 +340,7 @@ function LeafParticleSystem() {
         ctx.beginPath(); ctx.moveTo(0, -11 * scale); ctx.lineTo(0, 11 * scale);
         ctx.strokeStyle = "rgba(0,0,0,0.1)"; ctx.lineWidth = 0.4 * scale; ctx.stroke();
       } else {
-        // Heart-shaped leaf (like paan/betel)
+        // Heart-shaped leaf 
         ctx.beginPath();
         ctx.moveTo(0, 6 * scale);
         ctx.bezierCurveTo(-12 * scale, -2 * scale, -14 * scale, -14 * scale, 0, -10 * scale);
@@ -502,12 +502,55 @@ function CustomCursor() {
 }
 
 // ─── Announcement Bar ─────────────────────────────────────────────────────────
-function AnnouncementBar() {
-  const items = ["🌿 FREE SHIPPING ABOVE ₹999","✦ EARN 2X ECO POINTS THIS WEEK","🌱 PLANTED 48K TREES","♻️ 100% SUSTAINABLE PACKAGING","🌍 CARBON-NEUTRAL DELIVERIES","✦ NEW ARRIVALS EVERY FRIDAY","🎁 MYSTERY REWARDS ON EVERY ORDER","🌿 FREE SHIPPING ABOVE ₹999","✦ EARN 2X ECO POINTS THIS WEEK","🌱 PLANTED 48K TREES","♻️ 100% SUSTAINABLE PACKAGING","🌍 CARBON-NEUTRAL DELIVERIES","✦ NEW ARRIVALS EVERY FRIDAY","🎁 MYSTERY REWARDS ON EVERY ORDER"];
+function AnnouncementBar({ darkMode }: { darkMode: boolean }) {
+  const ecoMessages = [
+    "🌿 FREE SHIPPING ABOVE ₹999",
+    "♻️ SHOP ECO-FRIENDLY & SAVE THE PLANET",
+    "🌱 PLANTED 48K+ TREES WITH YOUR PURCHASES",
+    "🌍 100% SUSTAINABLE, CARBON-NEUTRAL FASHION",
+    "💚 EVERY PURCHASE PLANTS A SEED",
+    "✨ ETHICAL PRODUCTION, AMAZING QUALITY",
+    "🎁 EARN ECO REWARDS ON EVERY ORDER",
+    "🌿 CHOOSE SUSTAINABILITY, CHOOSE ECOVERSE",
+    "♻️ POST-CONSUMER RECYCLED MATERIALS",
+    "🌱 BIODEGRADABLE PACKAGING INCLUDED",
+  ];
+  
+  const items = [
+    ...ecoMessages,
+    ...ecoMessages, // Double for continuous loop
+  ];
+
   return (
-    <div style={{ background:"#0f2218",overflow:"hidden",padding:"9px 0",position:"relative",zIndex:200 }}>
-      <div style={{ display:"flex",animation:"marquee 32s linear infinite",width:"max-content" }}>
-        {items.map((item,i) => <span key={i} style={{ fontFamily:"var(--font-space-mono,monospace)",fontSize:"10px",letterSpacing:"0.18em",padding:"0 28px",whiteSpace:"nowrap",color:i%4===1?"#f0d080":i%4===3?"#80c8f0":"#a8d5a2" }}>{item}</span>)}
+    <div style={{
+      background: darkMode ? "#0f1f14" : "#0f2218",
+      overflow: "hidden",
+      padding: "12px 0",
+      position: "relative",
+      zIndex: 200
+    }}>
+      <div style={{ display: "flex", animation: "marquee 45s linear infinite", width: "max-content" }}>
+        {items.map((item, i) => (
+          <span
+            key={i}
+            style={{
+              fontFamily: "var(--font-space-mono,monospace)",
+              fontSize: "11px",
+              letterSpacing: "0.16em",
+              padding: "0 32px",
+              whiteSpace: "nowrap",
+              color: 
+                i % 5 === 0 ? (darkMode ? "#9dcc9d" : "#a8d5a2") :
+                i % 5 === 1 ? (darkMode ? "#7dd87d" : "#4a7c59") :
+                i % 5 === 2 ? (darkMode ? "#c8e6c8" : "#d4e6c3") :
+                i % 5 === 3 ? (darkMode ? "#6dd66d" : "#2d5a3d") :
+                (darkMode ? "#b8d8b8" : "#6b8c6b"),
+              fontWeight: i % 5 === 1 ? 600 : 400,
+            }}
+          >
+            {item}
+          </span>
+        ))}
       </div>
       <style>{`@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
     </div>
@@ -515,8 +558,8 @@ function AnnouncementBar() {
 }
 
 // ─── Floating Navigation ──────────────────────────────────────────────────────
-function Navigation({ activeTab, setActiveTab, onSignInClick, user, onSignOut }:
-  { activeTab:string; setActiveTab:(t:string)=>void; onSignInClick:()=>void; user:AuthUser|null; onSignOut:()=>void }) {
+function Navigation({ activeTab, setActiveTab, onSignInClick, user, onSignOut, darkMode }:
+  { activeTab:string; setActiveTab:(t:string)=>void; onSignInClick:()=>void; user:AuthUser|null; onSignOut:()=>void; darkMode:boolean }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 60);
@@ -531,12 +574,12 @@ function Navigation({ activeTab, setActiveTab, onSignInClick, user, onSignOut }:
       left:  scrolled ? "16px" : "0",
       right: scrolled ? "16px" : "0",
       height: scrolled ? "56px" : "64px",
-      background: "rgba(245,242,235,0.96)",
+      background: darkMode ? "rgba(26,26,20,0.96)" : "rgba(245,242,235,0.96)",
       backdropFilter:"blur(24px) saturate(1.8)",
       borderRadius: scrolled ? "16px" : "0",
-      border:       scrolled ? "1px solid rgba(220,215,200,0.8)" : "none",
-      borderBottom: scrolled ? "none" : "1.5px solid rgba(224,219,208,0.7)",
-      boxShadow:    scrolled ? "0 8px 40px rgba(0,0,0,0.1),0 2px 8px rgba(0,0,0,0.06)" : "0 1px 0 rgba(224,219,208,0.5)",
+      border:       scrolled ? (darkMode ? "1px solid rgba(74,124,89,0.3)" : "1px solid rgba(220,215,200,0.8)") : "none",
+      borderBottom: scrolled ? "none" : (darkMode ? "1.5px solid rgba(74,124,89,0.4)" : "1.5px solid rgba(224,219,208,0.7)"),
+      boxShadow:    scrolled ? (darkMode ? "0 8px 40px rgba(0,0,0,0.4),0 2px 8px rgba(0,0,0,0.3)" : "0 8px 40px rgba(0,0,0,0.1),0 2px 8px rgba(0,0,0,0.06)") : (darkMode ? "0 1px 0 rgba(74,124,89,0.2)" : "0 1px 0 rgba(224,219,208,0.5)"),
       display:"flex", alignItems:"center", justifyContent:"space-between",
       padding: scrolled ? "0 24px" : "0 52px",
       transition:"all 0.45s cubic-bezier(0.16,1,0.3,1)",
@@ -547,28 +590,28 @@ function Navigation({ activeTab, setActiveTab, onSignInClick, user, onSignOut }:
           <button key={item} onClick={() => setActiveTab(item)} style={{
             background:"none", border:"none", cursor:"pointer",
             fontFamily:"var(--font-jost,sans-serif)", fontSize:"11px", fontWeight:700, letterSpacing:"0.1em",
-            color: activeTab===item ? "#1a3a2a" : "#8a9a8a",
-            borderBottom: activeTab===item ? "2px solid #2d6a4f" : "2px solid transparent",
+            color: activeTab===item ? (darkMode ? "#a8d5a2" : "#1a3a2a") : (darkMode ? "#6b8c6b" : "#8a9a8a"),
+            borderBottom: activeTab===item ? (darkMode ? "2px solid #4a7c59" : "2px solid #2d6a4f") : "2px solid transparent",
             paddingBottom:"2px", transition:"all 0.2s", whiteSpace:"nowrap",
           }}>{item}</button>
         ))}
       </div>
       {/* Logo */}
-      <div style={{ fontFamily:"var(--font-playfair,serif)",fontSize:scrolled?"20px":"23px",fontWeight:700,letterSpacing:"-0.02em",color:"#1a1a1a",userSelect:"none",transition:"font-size 0.3s" }}>
-        Eco<span style={{ color:"#2d6a4f",fontStyle:"italic" }}>Verse</span>
+      <div style={{ fontFamily:"var(--font-playfair,serif)",fontSize:scrolled?"20px":"23px",fontWeight:700,letterSpacing:"-0.02em",color: darkMode ? "#c8e6c8" : "#1a1a1a",userSelect:"none",transition:"font-size 0.3s" }}>
+        Eco<span style={{ color: darkMode ? "#7dd87d" : "#2d6a4f",fontStyle:"italic" }}>Verse</span>
       </div>
       {/* Right actions */}
       <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
-        {!user && <button style={{ display:"flex",alignItems:"center",gap:6,background:"white",border:"1.5px solid #d8d3c8",borderRadius:20,padding:"6px 14px",fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",fontWeight:600,color:"#555" }}>
-          <span style={{ width:7,height:7,borderRadius:"50%",background:"#2d6a4f",display:"inline-block" }}/> 0 pts
+        {!user && <button style={{ display:"flex",alignItems:"center",gap:6,background: darkMode ? "#2d5a3d" : "white",border: darkMode ? "1.5px solid #4a7c59" : "1.5px solid #d8d3c8",borderRadius:20,padding:"6px 14px",fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",fontWeight:600,color: darkMode ? "#a8d5a2" : "#555" }}>
+          <span style={{ width:7,height:7,borderRadius:"50%",background: darkMode ? "#7dd87d" : "#2d6a4f",display:"inline-block" }}/> 0 pts
         </button>}
-        {user ? <UserMenu user={user} onSignOut={onSignOut}/> :
-          <button onClick={onSignInClick} style={{ background:"none",border:"none",cursor:"pointer",fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",fontWeight:700,letterSpacing:"0.1em",color:"#1a3a2a",textDecoration:"underline",textUnderlineOffset:"3px" }}>SIGN IN</button>
+        {user ? <UserMenu user={user} onSignOut={onSignOut} darkMode={darkMode}/> :
+          <button onClick={onSignInClick} style={{ background:"none",border:"none",cursor:"pointer",fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",fontWeight:700,letterSpacing:"0.1em",color: darkMode ? "#a8d5a2" : "#1a3a2a",textDecoration:"underline",textUnderlineOffset:"3px" }}>SIGN IN</button>
         }
         <button
-          style={{ background:"#1a3a2a",color:"white",border:"none",borderRadius:"8px",padding:"10px 20px",fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",fontWeight:700,letterSpacing:"0.1em",cursor:"pointer",transition:"all 0.2s",boxShadow:"0 2px 12px rgba(26,58,42,0.3)" }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background="#2d6a4f";(e.currentTarget as HTMLElement).style.transform="translateY(-1px)";}}
-          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background="#1a3a2a";(e.currentTarget as HTMLElement).style.transform="translateY(0)";}}>
+          style={{ background: darkMode ? "#2d5a3d" : "#1a3a2a",color: darkMode ? "#c8e6c8" : "white",border:"none",borderRadius:"8px",padding:"10px 20px",fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",fontWeight:700,letterSpacing:"0.1em",cursor:"pointer",transition:"all 0.2s",boxShadow: darkMode ? "0 2px 12px rgba(45,90,61,0.5)" : "0 2px 12px rgba(26,58,42,0.3)" }}
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background= darkMode ? "#4a7c59" : "#2d6a4f";(e.currentTarget as HTMLElement).style.transform="translateY(-1px)";}}
+          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background= darkMode ? "#2d5a3d" : "#1a3a2a";(e.currentTarget as HTMLElement).style.transform="translateY(0)";}}>
           SHOP NOW
         </button>
       </div>
@@ -577,7 +620,7 @@ function Navigation({ activeTab, setActiveTab, onSignInClick, user, onSignOut }:
 }
 
 // ─── Auth Modal ───────────────────────────────────────────────────────────────
-function AuthModal({ onClose, onAuth }: { onClose:()=>void; onAuth:(u:AuthUser)=>void }) {
+function AuthModal({ onClose, onAuth, darkMode }: { onClose:()=>void; onAuth:(u:AuthUser)=>void; darkMode:boolean }) {
   const [mode, setMode]   = useState<"signin"|"signup">("signin");
   const [form, setForm]   = useState({ name:"", email:"", password:"" });
   const [error, setError] = useState("");
@@ -654,7 +697,7 @@ function AuthModal({ onClose, onAuth }: { onClose:()=>void; onAuth:(u:AuthUser)=
 }
 
 // ─── User Menu ────────────────────────────────────────────────────────────────
-function UserMenu({ user, onSignOut }: { user:AuthUser; onSignOut:()=>void }) {
+function UserMenu({ user, onSignOut, darkMode }: { user:AuthUser; onSignOut:()=>void; darkMode:boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{ position:"relative" }}>
@@ -932,7 +975,7 @@ function ToteBag() {
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-function Hero({ onShopClick }: { onShopClick:()=>void }) {
+function Hero({ onShopClick, darkMode }: { onShopClick:()=>void; darkMode:boolean }) {
   const [vis, setVis] = useState(false);
   useEffect(() => { setTimeout(() => setVis(true), 100); }, []);
   const fade = (d=0): React.CSSProperties => ({ opacity:vis?1:0, transform:vis?"translateY(0)":"translateY(28px)", transition:`all 0.9s ${d}s cubic-bezier(0.16,1,0.3,1)` });
@@ -1016,7 +1059,7 @@ function Hero({ onShopClick }: { onShopClick:()=>void }) {
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
-function Categories() {
+function Categories({ darkMode }: { darkMode: boolean }) {
   const { ref, visible } = useScrollReveal();
   return (
     <section ref={ref as React.RefObject<HTMLElement>} style={{ background:"rgba(245,242,235,0.97)",position:"relative",zIndex:2 }}>
@@ -1041,7 +1084,7 @@ function Categories() {
 }
 
 // ─── Impact Strip ─────────────────────────────────────────────────────────────
-function ImpactStrip() {
+function ImpactStrip({ darkMode }: { darkMode: boolean }) {
   const { ref, visible } = useScrollReveal();
   return (
     <section ref={ref as React.RefObject<HTMLElement>} style={{ background:"#1a3a2a",padding:"72px 72px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:40,position:"relative",zIndex:2 }}>
@@ -1063,7 +1106,7 @@ function ImpactStrip() {
 }
 
 // ─── Shop ─────────────────────────────────────────────────────────────────────
-function Shop({ onAddToCart }: { onAddToCart:(p:Product)=>void }) {
+function Shop({ onAddToCart, darkMode }: { onAddToCart:(p:Product)=>void; darkMode:boolean }) {
   const { ref, visible } = useScrollReveal();
   const [filter, setFilter] = useState<"ALL"|"ORGANIC"|"RECYCLED"|"VEGAN">("ALL");
   const [hovered, setHovered] = useState<number|null>(null);
@@ -1114,7 +1157,7 @@ function Shop({ onAddToCart }: { onAddToCart:(p:Product)=>void }) {
 }
 
 // ─── Eco Ranks ────────────────────────────────────────────────────────────────
-function EcoRanks() {
+function EcoRanks({ darkMode }: { darkMode: boolean }) {
   const { ref, visible } = useScrollReveal();
   return (
     <section ref={ref as React.RefObject<HTMLElement>} style={{ background:"rgba(240,236,227,0.97)",position:"relative",zIndex:2 }}>
@@ -1385,7 +1428,7 @@ function EcoBot() {
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
-function Footer() {
+function Footer({ darkMode }: { darkMode: boolean }) {
   return (
     <footer style={{ background:"#0f2218",padding:"60px 72px 32px",position:"relative",zIndex:2 }}>
       <div style={{ display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:48,marginBottom:48 }}>
@@ -1411,7 +1454,7 @@ function Footer() {
 }
 
 // ─── Shopping Cart Component ──────────────────────────────────────────────────
-function ShoppingCart({ cart, setCart, isOpen, onClose, user }: { cart:CartItem[]; setCart:(c:CartItem[])=>void; isOpen:boolean; onClose:()=>void; user:AuthUser|null }) {
+function ShoppingCart({ cart, setCart, isOpen, onClose, user, darkMode }: { cart:CartItem[]; setCart:(c:CartItem[])=>void; isOpen:boolean; onClose:()=>void; user:AuthUser|null; darkMode:boolean }) {
   const [checkoutStep, setCheckoutStep] = useState<'cart'|'address'|'payment'|'success'>('cart');
   const [checkoutData, setCheckoutData] = useState<CheckoutData>({ fullName:'', email:user?.email||'', phone:'', address:'', city:'', state:'', pincode:'', cardNumber:'', cardName:'', cardExpiry:'', cardCVV:'' });
   const [loading, setLoading] = useState(false);
@@ -1613,6 +1656,7 @@ export default function HomePage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const handleAddToCart = useCallback((product: Product) => {
     setCart(prevCart => {
@@ -1648,29 +1692,64 @@ export default function HomePage() {
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <div style={{ background:"#f5f2eb", minHeight:"100vh", fontFamily:'var(--font-jost,sans-serif)', position:"relative" }}>
-      <LeafParticleSystem />
+    <div style={{
+      background: darkMode ? "#1a1a14" : "#f5f2eb",
+      color: darkMode ? "#e8e4d8" : "#1a1a14",
+      minHeight: "100vh",
+      fontFamily: 'var(--font-jost,sans-serif)',
+      position: "relative",
+      transition: "background-color 0.3s ease, color 0.3s ease"
+    }}>
+      <LeafParticleSystem darkMode={darkMode} />
       <CustomCursor />
-      <AnnouncementBar />
+      <AnnouncementBar darkMode={darkMode} />
       
-      <Navigation activeTab="SHOP" setActiveTab={()=>{}} onSignInClick={() => setAuthModalOpen(true)} user={user} onSignOut={handleSignOut} />
+      {/* Dark Mode Toggle */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          zIndex: 1000,
+          background: darkMode ? "#2d5a3d" : "#d4e6c3",
+          border: "2px solid " + (darkMode ? "#4a7c59" : "#4a7c59"),
+          borderRadius: "50%",
+          width: "50px",
+          height: "50px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "24px",
+          transition: "all 0.3s ease",
+          boxShadow: darkMode 
+            ? "0 4px 12px rgba(42, 92, 61, 0.3)"
+            : "0 4px 12px rgba(74, 124, 89, 0.2)",
+        }}
+        title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+      >
+        {darkMode ? "☀️" : "🌙"}
+      </button>
+      
+      <Navigation activeTab="SHOP" setActiveTab={()=>{}} onSignInClick={() => setAuthModalOpen(true)} user={user} onSignOut={handleSignOut} darkMode={darkMode} />
 
       <main style={{ position:"relative", zIndex:2 }}>
-        <Hero onShopClick={() => document.querySelector('[data-scroll-to="shop"]')?.scrollIntoView({ behavior: 'smooth' })} />
-        <Categories />
-        <div data-scroll-to="shop"><Shop onAddToCart={handleAddToCart} /></div>
-        <ImpactStrip />
-        <EcoRanks />
-        <TravelData />
-        <ElectricityUsage />
+        <Hero onShopClick={() => document.querySelector('[data-scroll-to="shop"]')?.scrollIntoView({ behavior: 'smooth' })} darkMode={darkMode} />
+        <Categories darkMode={darkMode} />
+        <div data-scroll-to="shop"><Shop onAddToCart={handleAddToCart} darkMode={darkMode} /></div>
+        <ImpactStrip darkMode={darkMode} />
+        <EcoRanks darkMode={darkMode} />
+        <TravelData darkMode={darkMode} />
+        <ElectricityUsage darkMode={darkMode} />
       </main>
 
-      <Footer />
+      <Footer darkMode={darkMode} />
 
-      <ShoppingCart cart={cart} setCart={setCart} isOpen={cartOpen} onClose={() => setCartOpen(false)} user={user} />
+      <ShoppingCart cart={cart} setCart={setCart} isOpen={cartOpen} onClose={() => setCartOpen(false)} user={user} darkMode={darkMode} />
 
       {authModalOpen && (
-        <AuthModal onClose={() => setAuthModalOpen(false)} onAuth={handleSignIn} />
+        <AuthModal onClose={() => setAuthModalOpen(false)} onAuth={handleSignIn} darkMode={darkMode} />
       )}
 
       <style>{`
@@ -1683,7 +1762,7 @@ export default function HomePage() {
 }
 
 // ─── Travel Data Component ─────────────────────────────────────────────────────
-function TravelData() {
+function TravelData({ darkMode }: { darkMode: boolean }) {
   interface TravelEntry {
     type: 'flight' | 'car' | 'train' | 'bus';
     distance: number;
@@ -1837,7 +1916,7 @@ function TravelData() {
 }
 
 // ─── Electricity Usage Component ───────────────────────────────────────────────
-function ElectricityUsage() {
+function ElectricityUsage({ darkMode }: { darkMode: boolean }) {
   const [data, setData] = useState({ monthlyUsage: 0, energySource: 'grid', householdSize: 1 });
 
   const calculateCarbonFootprint = () => {

@@ -19,6 +19,8 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   error: string | null;
+  logout: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -85,8 +87,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription?.unsubscribe();
   }, []);
 
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to logout');
+    }
+  };
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!profile) return;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', profile.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) setProfile(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile');
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, error }}>
+    <AuthContext.Provider value={{ user, profile, loading, error, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

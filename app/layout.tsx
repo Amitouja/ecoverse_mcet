@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Playfair_Display, Jost, Space_Mono } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/app/context/AuthContext';
+import { CartProvider } from '@/app/context/CartContext';
 import { Navbar } from '@/app/components/Navbar';
 
 const playfair = Playfair_Display({
@@ -40,8 +41,10 @@ export default function RootLayout({
         className={`${playfair.variable} ${jost.variable} ${spaceMono.variable} antialiased bg-[#f5f2eb] text-[#1a1a1a] font-jost overflow-x-hidden`}
       >
         <AuthProvider>
-          <Navbar />
-          {children}
+          <CartProvider>
+            <Navbar />
+            {children}
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>
