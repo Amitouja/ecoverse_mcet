@@ -1,9 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/app/context/AuthContext';
 import { useCart } from '@/app/context/CartContext';
 import { useRouter } from 'next/navigation';
+
+const ThemeToggle = dynamic(() => import('./ThemeToggle').then(mod => ({ default: mod.ThemeToggle })), {
+  ssr: false,
+  loading: () => <div className="w-10 h-10" />,
+});
 
 export function Navbar() {
   const { user, profile, logout } = useAuth();
@@ -17,42 +23,52 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-40">
+    <nav className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-40 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold text-green-600 whitespace-nowrap">
+          <Link href="/" className="text-2xl font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
             🌿 EcoVerse
           </Link>
 
           {/* Main Navigation */}
-          <div className="flex items-center gap-8 flex-1 justify-center">
-            <Link href="/shop" className="text-gray-700 hover:text-green-600 transition font-medium">
+          <div className="flex items-center gap-4 md:gap-8 flex-1 justify-center text-sm md:text-base overflow-x-auto">
+            <Link href="/shop" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium whitespace-nowrap">
               Shop
+            </Link>
+            <Link href="/eco-ranks" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium whitespace-nowrap">
+              Eco Ranks
+            </Link>
+            <Link href="/rewards" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium whitespace-nowrap">
+              Rewards
+            </Link>
+            <Link href="/ai-stylist" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium whitespace-nowrap">
+              AI Stylist
             </Link>
             {user && (
               <>
-                <Link href="/dashboard" className="text-gray-700 hover:text-green-600 transition font-medium">
+                <Link href="/dashboard" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium whitespace-nowrap">
                   Dashboard
                 </Link>
-                <Link href="/travel" className="text-gray-700 hover:text-green-600 transition font-medium">
+                <Link href="/travel" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium whitespace-nowrap">
                   Travel
                 </Link>
-                <Link href="/electricity" className="text-gray-700 hover:text-green-600 transition font-medium">
+                <Link href="/electricity" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium whitespace-nowrap">
                   Energy
                 </Link>
               </>
             )}
           </div>
 
-          {/* Right Side - Auth & Cart */}
-          <div className="flex items-center gap-4">
+          {/* Right Side - Auth & Cart & Theme */}
+          <div className="flex items-center gap-2 md:gap-4">
+            <ThemeToggle />
             {user ? (
               <>
                 {/* Cart Icon */}
                 <Link
                   href="/cart"
-                  className="relative text-gray-700 hover:text-green-600 transition text-2xl"
+                  className="relative text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition text-2xl"
                 >
                   🛒
                   {cartCount > 0 && (
@@ -63,14 +79,14 @@ export function Navbar() {
                 </Link>
 
                 {/* User Info */}
-                <div className="flex items-center gap-3 border-l-2 border-gray-200 pl-4">
+                <div className="hidden md:flex items-center gap-3 border-l-2 border-gray-200 dark:border-gray-600 pl-4">
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900">{profile?.full_name}</p>
-                    <p className="text-xs text-green-600">{profile?.eco_points} pts</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{profile?.full_name}</p>
+                    <p className="text-xs text-green-600 dark:text-green-400">{profile?.eco_points} pts</p>
                   </div>
                   <button
                     onClick={handleSignOut}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm font-medium"
+                    className="bg-red-600 dark:bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition text-sm font-medium"
                   >
                     Sign Out
                   </button>
@@ -78,12 +94,12 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/login" className="text-gray-700 hover:text-green-600 transition font-medium">
+                <Link href="/login" className="text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition font-medium text-sm md:text-base">
                   Sign In
                 </Link>
                 <Link
                   href="/signup"
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium"
+                  className="bg-green-600 dark:bg-green-700 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition font-medium text-sm md:text-base"
                 >
                   Sign Up
                 </Link>

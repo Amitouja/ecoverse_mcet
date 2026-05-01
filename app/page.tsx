@@ -208,45 +208,40 @@ const createSupabaseClient = () => {
   };
 };
 
-// Save order to Supabase
+// Save order via Next.js API route
 async function saveOrderToSupabase(order: Order) {
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    // Fallback to localStorage if Supabase not configured
-    const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-    orders.push({ ...order, id: Date.now().toString(), created_at: new Date().toISOString() });
-    localStorage.setItem("orders", JSON.stringify(orders));
-    return { success: true, message: "Order saved to localStorage" };
-  }
-
   try {
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/orders`, {
-      method: "POST",
+    // Try calling the Next.js API route
+    const response = await fetch('/api/orders/save', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        apiKey: SUPABASE_KEY,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        user_id: null, // Would be set from auth context if available
         user_email: order.user_email,
         items: order.items,
         total: order.total,
-        address: order.address,
-        status: "pending",
+        shipping_address: order.address,
+        billing_address: order.address,
       }),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error("Failed to save order");
+      throw new Error(data.error || 'Failed to save order');
     }
 
-    return { success: true, message: "Order saved successfully" };
+    return { success: true, message: "Order saved successfully", orderId: data.orderId };
   } catch (error) {
-    console.error("Error saving order:", error);
-    // Fallback to localStorage
+    console.error("Error saving order via API:", error);
+    
+    // Fallback to localStorage if API fails
     const orders = JSON.parse(localStorage.getItem("orders") || "[]");
     orders.push({ ...order, id: Date.now().toString(), created_at: new Date().toISOString() });
     localStorage.setItem("orders", JSON.stringify(orders));
-    return { success: true, message: "Order saved to localStorage" };
+    return { success: true, message: "Order saved to localStorage (offline mode)", orderId: Date.now().toString() };
   }
 }
 
@@ -748,229 +743,44 @@ function SectionHeader({ label, title, accent, subtitle }: { label:string; title
   );
 }
 
-// ─── CLEAN 3D TOTE BAG ────────────────────────────────────────────────────────
-// Redesigned: simple, solid, beautiful — clearly readable as a real bag
-function ToteBag() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouse  = useRef({ x:0, y:0 });
-  const rotY   = useRef(0.3);
-  const rotX   = useRef(0.15);
-  const raf    = useRef(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    const W = canvas.width = 480; const H = canvas.height = 520;
-
-    // Simple but solid tote bag using layered 2D paths (cleaner than complex 3D)
-    // We rotate a flat representation with perspective simulation
-    let time = 0;
-
-    const draw = () => {
-      ctx.clearRect(0, 0, W, H);
-      time += 0.012;
-
-      // Smooth rotation
-      const targetY = 0.3 + Math.sin(time * 0.4) * 0.22 + mouse.current.x * 0.0008;
-      const targetX = 0.15 + mouse.current.y * 0.0004;
-      rotY.current += (targetY - rotY.current) * 0.04;
-      rotX.current += (targetX - rotX.current) * 0.04;
-
-      const ry = rotY.current;
-      const perspX = Math.sin(ry); // -1 to 1: how much we see the side
-
-      const cx = W / 2;
-      const cy = H / 2 + 10;
-
-      // ── Soft ambient glow ─────────────────────────────────────────────
-      const glow = ctx.createRadialGradient(cx, cy, 20, cx, cy, 200);
-      glow.addColorStop(0, "rgba(180,155,100,0.12)");
-      glow.addColorStop(0.5,"rgba(45,106,79,0.06)");
-      glow.addColorStop(1,  "rgba(245,242,235,0)");
-      ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
-
-      // ── Bag dimensions ────────────────────────────────────────────────
-      const bW = 140; const bH = 170; const depth = 60;
-      const sideW = depth * Math.abs(perspX) * 0.8;
-      const isRight = perspX > 0;
-
-      // Light direction: upper-left
-      const lightAngle = ry - 0.8;
-      const frontLight = 0.55 + Math.cos(lightAngle) * 0.38;
-      const sideLight  = 0.28 + Math.sin(lightAngle) * 0.2;
-
-      // ── Drop shadow ───────────────────────────────────────────────────
-      const shadowG = ctx.createRadialGradient(cx, cy + bH * 0.85 + 8, 5, cx, cy + bH * 0.85 + 8, bW * 0.9);
-      shadowG.addColorStop(0, "rgba(80,55,20,0.22)"); shadowG.addColorStop(1, "rgba(80,55,20,0)");
-      ctx.save(); ctx.scale(1, 0.3);
-      ctx.beginPath(); ctx.ellipse(cx, (cy + bH * 0.85 + 8) / 0.3, bW * 0.82, bW * 0.6, 0, 0, Math.PI * 2);
-      ctx.fillStyle = shadowG; ctx.fill(); ctx.restore();
-
-      // ── SIDE FACE ─────────────────────────────────────────────────────
-      if (sideW > 2) {
-        const sideX = isRight ? cx + bW : cx - bW - sideW;
-        const sideTop = cy - bH * 0.5;
-        const sideBotY = cy + bH * 0.5;
-        // Slight taper at top
-        const taperTop = sideW * 0.85;
-        const taperX   = isRight ? sideX + sideW - taperTop : sideX + sideW - sideW + taperTop - sideW;
-
-        const sideGrad = ctx.createLinearGradient(sideX, 0, sideX + sideW, 0);
-        const sc = Math.floor(160 * sideLight);
-        const sc2 = Math.floor(130 * sideLight);
-        sideGrad.addColorStop(0, `rgb(${sc+20},${sc},${sc2-20})`);
-        sideGrad.addColorStop(1, `rgb(${sc},${sc-10},${sc2-30})`);
-
-        ctx.beginPath();
-        if (isRight) {
-          ctx.moveTo(cx + bW, sideTop + 8);
-          ctx.lineTo(cx + bW + taperTop, sideTop);
-          ctx.lineTo(cx + bW + sideW, sideTop + 16);
-          ctx.lineTo(cx + bW + sideW, sideBotY - 4);
-          ctx.lineTo(cx + bW, sideBotY);
-        } else {
-          ctx.moveTo(cx - bW - taperTop, sideTop);
-          ctx.lineTo(cx - bW, sideTop + 8);
-          ctx.lineTo(cx - bW, sideBotY);
-          ctx.lineTo(cx - bW - sideW, sideBotY - 4);
-          ctx.lineTo(cx - bW - sideW, sideTop + 16);
-        }
-        ctx.closePath();
-        ctx.fillStyle = sideGrad; ctx.fill();
-        ctx.strokeStyle = "rgba(100,75,35,0.15)"; ctx.lineWidth = 1; ctx.stroke();
-      }
-
-      // ── FRONT FACE ────────────────────────────────────────────────────
-      const fl = frontLight;
-      const r0 = Math.floor(230 * fl), g0 = Math.floor(205 * fl), b0 = Math.floor(165 * fl);
-      const r1 = Math.floor(210 * fl), g1 = Math.floor(185 * fl), b1 = Math.floor(145 * fl);
-
-      const frontGrad = ctx.createLinearGradient(cx - bW, cy - bH * 0.5, cx + bW, cy + bH * 0.5);
-      frontGrad.addColorStop(0,   `rgb(${r0+8},${g0+6},${b0+4})`);
-      frontGrad.addColorStop(0.35,`rgb(${r0},${g0},${b0})`);
-      frontGrad.addColorStop(0.7, `rgb(${r1+4},${g1+2},${b1})`);
-      frontGrad.addColorStop(1,   `rgb(${r1-8},${g1-6},${b1-8})`);
-
-      const topCurve = 18;
-      // Main bag body
-      ctx.beginPath();
-      ctx.moveTo(cx - bW + 12, cy - bH * 0.5);                      // top-left
-      ctx.lineTo(cx + bW - 12, cy - bH * 0.5);                      // top-right
-      ctx.lineTo(cx + bW, cy - bH * 0.5 + topCurve);
-      ctx.lineTo(cx + bW, cy + bH * 0.5 - 10);
-      ctx.quadraticCurveTo(cx + bW, cy + bH * 0.5, cx + bW - 12, cy + bH * 0.5); // bottom-right rounded
-      ctx.lineTo(cx - bW + 12, cy + bH * 0.5);
-      ctx.quadraticCurveTo(cx - bW, cy + bH * 0.5, cx - bW, cy + bH * 0.5 - 10); // bottom-left rounded
-      ctx.lineTo(cx - bW, cy - bH * 0.5 + topCurve);
-      ctx.closePath();
-      ctx.fillStyle = frontGrad; ctx.fill();
-      ctx.strokeStyle = "rgba(150,115,65,0.2)"; ctx.lineWidth = 1.5; ctx.stroke();
-
-      // ── TOP OPENING / RIM ─────────────────────────────────────────────
-      const rimH = 22;
-      const rimGrad = ctx.createLinearGradient(0, cy - bH * 0.5 - rimH, 0, cy - bH * 0.5);
-      rimGrad.addColorStop(0, `rgb(${Math.floor(195*fl)},${Math.floor(168*fl)},${Math.floor(125*fl)})`);
-      rimGrad.addColorStop(1, `rgb(${Math.floor(215*fl)},${Math.floor(190*fl)},${Math.floor(148*fl)})`);
-      ctx.beginPath();
-      ctx.moveTo(cx - bW * 0.85, cy - bH * 0.5 - rimH);
-      ctx.lineTo(cx + bW * 0.85, cy - bH * 0.5 - rimH);
-      ctx.lineTo(cx + bW, cy - bH * 0.5 + topCurve * 0.4);
-      ctx.lineTo(cx + bW - 12, cy - bH * 0.5);
-      ctx.lineTo(cx - bW + 12, cy - bH * 0.5);
-      ctx.lineTo(cx - bW, cy - bH * 0.5 + topCurve * 0.4);
-      ctx.closePath();
-      ctx.fillStyle = rimGrad; ctx.fill();
-      ctx.strokeStyle = "rgba(140,108,65,0.2)"; ctx.lineWidth = 1; ctx.stroke();
-
-      // ── HANDLES ───────────────────────────────────────────────────────
-      const handleXL = cx - bW * 0.42;
-      const handleXR = cx + bW * 0.42;
-      const handleBase = cy - bH * 0.5 - rimH + 6;
-      const handleArc  = 88 + Math.sin(time * 0.5) * 3; // slight breathing
-
-      [handleXL, handleXR].forEach((hx, hi) => {
-        const hxOpp = hi === 0 ? handleXL + 48 : handleXR - 48;
-        // Handle shadow
-        ctx.beginPath();
-        ctx.moveTo(hx, handleBase);
-        ctx.bezierCurveTo(hx - 4, handleBase - handleArc * 0.9, hxOpp + 4, handleBase - handleArc * 0.9, hxOpp, handleBase);
-        ctx.strokeStyle = "rgba(80,55,20,0.15)"; ctx.lineWidth = 11; ctx.lineCap = "round"; ctx.stroke();
-        // Strap base
-        ctx.beginPath();
-        ctx.moveTo(hx, handleBase);
-        ctx.bezierCurveTo(hx - 2, handleBase - handleArc * 0.92, hxOpp + 2, handleBase - handleArc * 0.92, hxOpp, handleBase);
-        const hGrad = ctx.createLinearGradient(hx, handleBase - handleArc, hxOpp, handleBase);
-        hGrad.addColorStop(0,   "rgb(200,168,110)");
-        hGrad.addColorStop(0.4, "rgb(220,188,128)");
-        hGrad.addColorStop(1,   "rgb(195,162,105)");
-        ctx.strokeStyle = hGrad; ctx.lineWidth = 9; ctx.stroke();
-        // Highlight on top edge
-        ctx.beginPath();
-        ctx.moveTo(hx, handleBase);
-        ctx.bezierCurveTo(hx - 2, handleBase - handleArc * 0.92, hxOpp + 2, handleBase - handleArc * 0.92, hxOpp, handleBase);
-        ctx.strokeStyle = "rgba(248,228,175,0.5)"; ctx.lineWidth = 2.5; ctx.stroke();
-        // Metal rivets at base
-        [hx, hxOpp].forEach(rx => {
-          const rg = ctx.createRadialGradient(rx - 1, handleBase - 2, 1, rx, handleBase, 5);
-          rg.addColorStop(0, "rgba(240,210,150,1)"); rg.addColorStop(1, "rgba(170,135,75,1)");
-          ctx.beginPath(); ctx.arc(rx, handleBase, 5, 0, Math.PI * 2);
-          ctx.fillStyle = rg; ctx.fill();
-          ctx.strokeStyle = "rgba(120,90,40,0.4)"; ctx.lineWidth = 0.8; ctx.stroke();
-        });
-      });
-
-      // ── LOGO PATCH (front center) ─────────────────────────────────────
-      const pW = 56, pH = 32;
-      const pX = cx - pW / 2, pY = cy - pH * 0.5 - 15;
-      // Slightly embossed leather patch
-      ctx.beginPath();
-      ctx.roundRect(pX, pY, pW, pH, 4);
-      ctx.fillStyle = `rgba(${Math.floor(200*fl)},${Math.floor(170*fl)},${Math.floor(125*fl)},0.9)`;
-      ctx.fill();
-      ctx.strokeStyle = `rgba(140,105,55,0.4)`; ctx.lineWidth = 1;
-      ctx.setLineDash([2, 2]); ctx.stroke(); ctx.setLineDash([]);
-      // EV monogram
-      ctx.font = `bold ${Math.round(14 * fl + 2)}px Georgia, serif`;
-      ctx.fillStyle = `rgba(${Math.floor(120*fl)},${Math.floor(88*fl)},${Math.floor(42*fl)},0.88)`;
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText("EV", cx, pY + pH / 2);
-
-      // ── HORIZONTAL SEAM LINES ─────────────────────────────────────────
-      [0.25, 0.6].forEach(t2 => {
-        const sy = cy - bH * 0.5 + topCurve + bH * t2 * 0.82;
-        ctx.beginPath();
-        ctx.moveTo(cx - bW + 10, sy);
-        ctx.lineTo(cx + bW - 10, sy);
-        ctx.strokeStyle = `rgba(160,128,80,${0.1 + t2 * 0.08})`; ctx.lineWidth = 0.8;
-        ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
-      });
-
-      // ── SURFACE SHEEN ─────────────────────────────────────────────────
-      const sheen = ctx.createRadialGradient(cx - bW * 0.25, cy - bH * 0.25, 10, cx - bW * 0.25, cy - bH * 0.25, bW * 0.7);
-      sheen.addColorStop(0, "rgba(255,248,220,0.14)");
-      sheen.addColorStop(0.4,"rgba(255,248,220,0.04)");
-      sheen.addColorStop(1, "rgba(255,248,220,0)");
-      ctx.beginPath();
-      ctx.roundRect(cx - bW + 2, cy - bH * 0.5 + topCurve - 2, bW * 2 - 4, bH - topCurve + 4, 6);
-      ctx.fillStyle = sheen; ctx.fill();
-
-      raf.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-    const onM = (e: MouseEvent) => {
-      const r = canvas.getBoundingClientRect();
-      mouse.current = { x: e.clientX - r.left - W/2, y: e.clientY - r.top - H/2 };
-    };
-    canvas.addEventListener("mousemove", onM);
-    return () => { cancelAnimationFrame(raf.current); canvas.removeEventListener("mousemove", onM); };
-  }, []);
-
+// ─── Animated Marquee Ad ──────────────────────────────────────────────────────
+function AnimatedAd({ darkMode }: { darkMode: boolean }) {
+  const messages = [
+    "Sustainable is the new luxury",
+    "Earn while saving the planet",
+    "Carbon-neutral fashion",
+    "Every purchase makes an impact",
+    "Zero-waste packaging"
+  ];
   return (
-    <canvas ref={canvasRef} style={{
-      width:480, height:520, cursor:"grab",
-      filter:"drop-shadow(0 24px 48px rgba(80,55,20,0.2)) drop-shadow(0 6px 16px rgba(45,106,79,0.12))",
-    }}/>
+    <div style={{ position:"relative", width:480, height:520, borderRadius:"24px", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center", background: darkMode ? "rgba(45,106,79,0.15)" : "rgba(168,213,162,0.2)", border: darkMode ? "1px solid rgba(74,124,89,0.3)" : "1px solid rgba(220,215,200,0.8)", boxShadow:"0 24px 48px rgba(80,55,20,0.1)" }}>
+      {/* Decorative bg shapes */}
+      <div style={{ position:"absolute", top:"-20%", left:"-20%", width:"70%", height:"70%", background:"radial-gradient(circle, rgba(168,213,162,0.4) 0%, transparent 70%)", borderRadius:"50%", animation:"pulse 6s infinite alternate" }} />
+      <div style={{ position:"absolute", bottom:"-20%", right:"-20%", width:"70%", height:"70%", background:"radial-gradient(circle, rgba(45,106,79,0.3) 0%, transparent 70%)", borderRadius:"50%", animation:"pulse 8s infinite alternate-reverse" }} />
+      
+      {/* Marquee Container */}
+      <div style={{ padding: "0 40px", textAlign: "center", zIndex: 10 }}>
+        <div style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"32px", fontWeight:700, color: darkMode ? "#c8e6c8" : "#1a3a2a", lineHeight:1.4, fontStyle: "italic", marginBottom: 20 }}>
+          <span style={{ fontSize:"64px", display:"block", marginBottom:10 }}>🌍</span>
+          Join the Movement
+        </div>
+        <div style={{ height: "40px", overflow: "hidden", position: "relative" }}>
+          <div style={{ animation: "verticalMarquee 15s linear infinite", display: "flex", flexDirection: "column", gap: "40px" }}>
+            {[...messages, messages[0]].map((msg, i) => (
+              <div key={i} style={{ height: "40px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily:"var(--font-jost,sans-serif)", fontSize:"16px", fontWeight:600, color: darkMode ? "#a8d5a2" : "#2d6a4f", letterSpacing:"0.05em", whiteSpace: "nowrap" }}>
+                ✨ {msg} ✨
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes verticalMarquee {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-400px); }
+        }
+      `}</style>
+    </div>
   );
 }
 
@@ -1041,7 +851,7 @@ function Hero({ onShopClick, darkMode }: { onShopClick:()=>void; darkMode:boolea
         <div style={{ position:"absolute",top:150,right:4,zIndex:5,background:"#a8d5a2",color:"#1a3a2a",padding:"7px 13px",borderRadius:20,fontFamily:"var(--font-space-mono,monospace)",fontSize:"11px",fontWeight:700,animation:"floatBadge 3.1s ease-in-out infinite 1.7s",boxShadow:"0 4px 14px rgba(45,106,79,0.25)" }}>+80 pts</div>
         <div style={{ position:"absolute",bottom:195,left:4,zIndex:5,background:"#1a3a2a",color:"#a8d5a2",padding:"8px 13px",borderRadius:20,fontFamily:"var(--font-jost,sans-serif)",fontSize:"11px",fontWeight:600,animation:"floatBadge 3.8s ease-in-out infinite 0.4s",boxShadow:"0 4px 14px rgba(26,58,42,0.25)" }}>🌍 Carbon Neutral</div>
 
-        <div style={{ position:"relative",zIndex:3 }}><ToteBag/></div>
+        <div style={{ position:"relative",zIndex:3 }}><AnimatedAd darkMode={darkMode} /></div>
 
         <div style={{ position:"absolute",bottom:18,zIndex:5,fontFamily:"var(--font-playfair,serif)",fontSize:"13px",color:"#7a6a50",fontStyle:"italic",background:"rgba(245,242,235,0.88)",backdropFilter:"blur(8px)",padding:"6px 18px",borderRadius:20,border:"1px solid rgba(195,165,110,0.3)" }}>
           Natural Canvas Tote · ₹1,499
@@ -1078,6 +888,50 @@ function Categories({ darkMode }: { darkMode: boolean }) {
             </div>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+
+// ─── Carbon Awareness ────────────────────────────────────────────────────────
+function CarbonAwareness({ darkMode }: { darkMode: boolean }) {
+  const { ref, visible } = useScrollReveal();
+  return (
+    <section ref={ref as React.RefObject<HTMLElement>} style={{ background: darkMode ? "#0f2218" : "#1a3a2a", padding:"80px 72px", position:"relative", zIndex:2, overflow:"hidden", color: "white" }}>
+      <div style={{ position:"absolute", top:0, left:0, bottom:0, width:"40%", background:"linear-gradient(90deg, rgba(45,106,79,0.4) 0%, transparent 100%)", pointerEvents:"none" }} />
+      <div style={{ maxWidth: 1100, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+        <div style={{ opacity:visible?1:0, transform:visible?"translateX(0)":"translateX(-28px)", transition:"all 0.9s cubic-bezier(0.16,1,0.3,1)" }}>
+          <span style={{ fontFamily:"var(--font-space-mono,monospace)", fontSize:"11px", letterSpacing:"0.22em", color:"#a8d5a2", display:"block", marginBottom:16 }}>// THE GLOBAL IMPACT</span>
+          <h2 style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"42px", fontWeight:700, lineHeight:1.1, marginBottom:24 }}>
+            Why <span style={{ color:"#a8d5a2", fontStyle:"italic" }}>Carbon Limits</span> Matter.
+          </h2>
+          <p style={{ fontFamily:"var(--font-jost,sans-serif)", fontSize:"16px", color:"#c8e6c8", lineHeight:1.8, marginBottom:32 }}>
+            Did you know? Under systems like the <strong>Emission Trading Scheme (ETS)</strong>, large corporations have strict carbon emission caps. Exceeding these limits results in heavy fines or the need to purchase <strong>Carbon Credits</strong>.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            {[
+              { icon: "🏛️", title: "Government Caps", desc: "Industries are given a fixed carbon allowance." },
+              { icon: "📉", title: "Trade & Offset", desc: "Companies under the limit can sell credits." },
+              { icon: "🌱", title: "Your Role", desc: "By choosing eco-friendly, you reduce the global footprint directly." }
+            ].map((item, i) => (
+              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:16, background: "rgba(255,255,255,0.05)", padding: 20, borderRadius: 12, border: "1px solid rgba(168,213,162,0.1)" }}>
+                <span style={{ fontSize:28 }}>{item.icon}</span>
+                <div>
+                  <h4 style={{ fontFamily:"var(--font-jost,sans-serif)", fontSize:"16px", fontWeight:600, color:"white", margin:"0 0 4px" }}>{item.title}</h4>
+                  <p style={{ fontFamily:"var(--font-jost,sans-serif)", fontSize:"13px", color:"rgba(255,255,255,0.7)", margin:0 }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ position:"relative", opacity:visible?1:0, transform:visible?"scale(1)":"scale(0.95)", transition:"all 0.9s 0.2s cubic-bezier(0.16,1,0.3,1)" }}>
+          <div style={{ width: "100%", height: 500, borderRadius: 24, background: "url('https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=800&q=80') center/cover", boxShadow: "0 24px 48px rgba(0,0,0,0.4)" }} />
+          <div style={{ position:"absolute", bottom: -24, left: -24, background: "white", padding: 24, borderRadius: 16, boxShadow: "0 12px 32px rgba(0,0,0,0.2)" }}>
+            <div style={{ fontFamily:"var(--font-playfair,serif)", fontSize:"24px", fontWeight:700, color:"#1a3a2a" }}>48,000+</div>
+            <div style={{ fontFamily:"var(--font-jost,sans-serif)", fontSize:"12px", color:"#4a7c59", fontWeight:600 }}>Tons of CO₂ offset globally</div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -1651,12 +1505,14 @@ function ShoppingCart({ cart, setCart, isOpen, onClose, user, darkMode }: { cart
 }
 
 // ─── Main Page Component ──────────────────────────────────────────────────────
+// ─── Main Page Component ──────────────────────────────────────────────────────
 export default function HomePage() {
   const [user, setUser] = useState<AuthUser|null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState("HOME");
 
   const handleAddToCart = useCallback((product: Product) => {
     setCart(prevCart => {
@@ -1668,7 +1524,6 @@ export default function HomePage() {
     });
     setCartOpen(true);
   }, []);
-
   // Real-time auth state listener
   useEffect(() => {
     const unsubscribe = supabaseAuth.onAuthStateChange((currentUser) => {
@@ -1732,16 +1587,23 @@ export default function HomePage() {
         {darkMode ? "☀️" : "🌙"}
       </button>
       
-      <Navigation activeTab="SHOP" setActiveTab={()=>{}} onSignInClick={() => setAuthModalOpen(true)} user={user} onSignOut={handleSignOut} darkMode={darkMode} />
+      <Navigation activeTab={activeTab === "HOME" ? "SHOP" : activeTab} setActiveTab={setActiveTab} onSignInClick={() => setAuthModalOpen(true)} user={user} onSignOut={handleSignOut} darkMode={darkMode} />
 
-      <main style={{ position:"relative", zIndex:2 }}>
-        <Hero onShopClick={() => document.querySelector('[data-scroll-to="shop"]')?.scrollIntoView({ behavior: 'smooth' })} darkMode={darkMode} />
-        <Categories darkMode={darkMode} />
-        <div data-scroll-to="shop"><Shop onAddToCart={handleAddToCart} darkMode={darkMode} /></div>
-        <ImpactStrip darkMode={darkMode} />
-        <EcoRanks darkMode={darkMode} />
-        <TravelData darkMode={darkMode} />
-        <ElectricityUsage darkMode={darkMode} />
+      <main style={{ position:"relative", zIndex:2, minHeight: "80vh" }}>
+        {activeTab === "HOME" && (
+          <>
+            <Hero onShopClick={() => setActiveTab("SHOP")} darkMode={darkMode} />
+            <Categories darkMode={darkMode} />
+            <ImpactStrip darkMode={darkMode} />
+            <CarbonAwareness darkMode={darkMode} />
+          </>
+        )}
+        {activeTab === "SHOP" && <div style={{paddingTop: 80}}><Shop onAddToCart={handleAddToCart} darkMode={darkMode} /></div>}
+        {activeTab === "ECO RANKS" && <div style={{paddingTop: 80}}><EcoRanks darkMode={darkMode} /></div>}
+        {activeTab === "REWARDS" && <div style={{paddingTop: 80}}><EcoRewards /></div>}
+        {activeTab === "AI STYLIST" && <div style={{paddingTop: 80}}><EcoBot /></div>}
+        {activeTab === "TRAVEL IMPACT" && <div style={{paddingTop: 80}}><TravelData darkMode={darkMode} /></div>}
+        {activeTab === "ELECTRICITY IMPACT" && <div style={{paddingTop: 80}}><ElectricityUsage darkMode={darkMode} /></div>}
       </main>
 
       <Footer darkMode={darkMode} />

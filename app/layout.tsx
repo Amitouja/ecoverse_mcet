@@ -3,6 +3,7 @@ import { Playfair_Display, Jost, Space_Mono } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/app/context/AuthContext';
 import { CartProvider } from '@/app/context/CartContext';
+import { ThemeProvider } from '@/app/context/ThemeContext';
 import { Navbar } from '@/app/components/Navbar';
 
 const playfair = Playfair_Display({
@@ -38,14 +39,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${playfair.variable} ${jost.variable} ${spaceMono.variable} antialiased bg-[#f5f2eb] text-[#1a1a1a] font-jost overflow-x-hidden`}
+        className={`${playfair.variable} ${jost.variable} ${spaceMono.variable} antialiased bg-[#f5f2eb] dark:bg-gray-900 text-[#1a1a1a] dark:text-white font-jost overflow-x-hidden transition-colors duration-300`}
       >
-        <AuthProvider>
-          <CartProvider>
-            <Navbar />
-            {children}
-          </CartProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Navbar />
+              {children}
+            </CartProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

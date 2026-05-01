@@ -14,6 +14,7 @@ app.use("/api/electricity", require("./routes/electricity"));
 app.use("/api/ml", require("./routes/ml-predictions"));
 app.use("/api/cart", require("./routes/cart"));
 app.use("/api/orders", require("./routes/orders"));
+app.use("/api/rewards", require("./routes/rewards"));
 
 // Health check
 app.get("/", (req, res) => {
